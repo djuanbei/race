@@ -4,15 +4,15 @@ set(CMAKE_DEPENDS_LANGUAGES
   )
 # The set of files for implicit dependencies of each language:
 set(CMAKE_DEPENDS_CHECK_CXX
-  "/home/lyun/demo/race/cdn/cdn.cpp" "/home/lyun/demo/race/build/CMakeFiles/cdn.dir/cdn.cpp.o"
-  "/home/lyun/demo/race/cdn/deploy.cpp" "/home/lyun/demo/race/build/CMakeFiles/cdn.dir/deploy.cpp.o"
-  "/home/lyun/demo/race/cdn/io.cpp" "/home/lyun/demo/race/build/CMakeFiles/cdn.dir/io.cpp.o"
+  "/Users/daixiaobei/race/cdn/cdn.cpp" "/Users/daixiaobei/race/build/CMakeFiles/cdn.dir/cdn.cpp.o"
+  "/Users/daixiaobei/race/cdn/deploy.cpp" "/Users/daixiaobei/race/build/CMakeFiles/cdn.dir/deploy.cpp.o"
+  "/Users/daixiaobei/race/cdn/io.cpp" "/Users/daixiaobei/race/build/CMakeFiles/cdn.dir/io.cpp.o"
   )
-set(CMAKE_CXX_COMPILER_ID "GNU")
+set(CMAKE_CXX_COMPILER_ID "Clang")
 
 # The include file search paths:
 set(CMAKE_CXX_TARGET_INCLUDE_PATH
-  "/home/lyun/demo/race/cdn/lib"
+  "/Users/daixiaobei/race/cdn/lib"
   )
 
 # Targets to which this target links.
