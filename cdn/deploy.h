@@ -53,6 +53,7 @@ public:
   }
 };
 
+const static int INF = numeric_limits<int>::max() / 4;
 class undirected_graph {
 
   typedef vector<int> VI;
@@ -61,8 +62,6 @@ class undirected_graph {
 
   typedef pair<int, int> PII;
   typedef vector<PII> VPII;
-
-  const int INF = numeric_limits<int>::max() / 4;
 
   typedef undirected_graph graph_t;
   struct endElement {
@@ -99,7 +98,7 @@ private:
   vector<int> out2inLink_map; // orginal link --> link_end
 
   vector<bool> found;
-  VI dist, pi, width, flow;
+  VI dist, width, flow;
   Fixed_heap Q;
   VPII dad;
 
@@ -128,7 +127,7 @@ private:
 
   int dijkstra(const int s, const int t, const vector<int> &caps,
                vector<int> &dist, vector<int> &width, vector<int> &flow,
-               vector<int> &pi, Fixed_heap &Q);
+               Fixed_heap &Q);
 
   int dijkstra(const int s, const int t, const vector<int> &caps);
 
@@ -210,25 +209,25 @@ public:
   bool bicompute_shortest_path_dijkstra(const int src, const int snk,
                                         vector<int> &path);
 
-  /** 
+  /**
    *  sequence call
-   * 
-   * @param src 
-   * @param snk 
+   *
+   * @param src
+   * @param snk
    * @param caps  undirected link capacity
-   * 
+   *
    * @return  maxflow  and total cost
    */
   pair<int, int> getMinCostMaxFlow(const int src, const int snk,
                                    const vector<int> &caps);
 
-  /** 
+  /**
    *  parallel call
-   * 
-   * @param src 
-   * @param snk 
+   *
+   * @param src
+   * @param snk
    * @param caps undirected link capacity
-   * 
+   *
    * @return maxflow  and total cost
    */
   pair<int, int> getMinCostMaxFlowP(const int src, const int snk,
@@ -240,6 +239,45 @@ public:
                       const vector<int> &path) const;
 
   int path_cost(const vector<int> &path) const;
+};
+
+class Loc_choose {
+private:
+  undirected_graph &graph;
+
+  int network_node_num;
+
+  int user_node_num;
+
+  int serice_price;
+
+  int virtual_source, virtual_target;
+
+  const vector<int> &network_to_vir_source_link;
+  const vector<int> &network_node_user_map;
+
+  int totCap;
+  const vector<int> &orignal_caps;
+
+  vector<int> best_dc_locs;
+
+  int value_supper, value_lower;
+
+public:
+  Loc_choose(undirected_graph &g, int network_n_num, int user_n_num,
+             int serice_p, int vir_source, int vir_target,
+             const vector<int> &net_to_vir_links, const vector<int> &node_map,
+             int totC, const vector<int> &caps)
+      : graph(g), network_node_num(network_n_num), user_node_num(user_n_num),
+        serice_price(serice_p), virtual_source(vir_source),
+        virtual_target(vir_target),
+        network_to_vir_source_link(net_to_vir_links),
+        network_node_user_map(node_map), totCap(totC), orignal_caps(caps) {
+
+    value_supper = INF;
+    value_lower = 0;
+  }
+  char *solve();
 };
 }
 void deploy_server(char *graph[MAX_EDGE_NUM], int edge_num, char *filename);

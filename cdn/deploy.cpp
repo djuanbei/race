@@ -74,7 +74,7 @@ void undirected_graph::initial(const vector<int> &esrcs,
   }
 
   vector<int> srcs, snks, weights;
-  for (size_t i = 0; i < srcs.size(); i++) {
+  for (size_t i = 0; i < esrcs.size(); i++) {
     srcs.push_back(esrcs[i]);
     snks.push_back(esnks[i]);
     weights.push_back(eweights[i]);
@@ -107,8 +107,9 @@ void undirected_graph::initial(const vector<int> &esrcs,
   vertex_num = ver_max + 1;
 
   dist.resize(vertex_num, INF);
-  pi.resize(vertex_num, 0);
+
   width.resize(vertex_num, 0);
+  dad.resize(vertex_num);
   Q = Fixed_heap(vertex_num);
 
   for (size_t i = 0; i < srcs.size(); i++) {
@@ -403,8 +404,7 @@ bool undirected_graph::bicompute_shortest_path_dijkstra(const int src,
 
 int undirected_graph::dijkstra(const int src, const int snk,
                                const vector<int> &caps, vector<int> &dist,
-                               vector<int> &width, vector<int> &flow,
-                               vector<int> &pi, Fixed_heap &Q) {
+                               vector<int> &width, vector<int> &flow, Fixed_heap &Q) {
 
   size_t j, outDegree, link, next;
   int current;
@@ -423,12 +423,9 @@ int undirected_graph::dijkstra(const int src, const int snk,
     current = p.second;
     if (current == snk) {
 
-      for (int k = 0; k < vertex_num; k++) {
-        pi[k] = min(pi[k] + dist[k], INF);
-      }
       return width[snk];
     }
-    Q.top();
+    Q.pop();
 
     outDegree = getOutDegree(current);
 
@@ -442,7 +439,7 @@ int undirected_graph::dijkstra(const int src, const int snk,
 
         next = neighbour.snk;
 
-        weight = dist[current] + pi[current] - pi[next] + neighbour.weight;
+        weight = dist[current]  + neighbour.weight;
         if (weight < dist[snk] && weight < dist[next]) {
 
           dist[next] = weight;
@@ -457,7 +454,7 @@ int undirected_graph::dijkstra(const int src, const int snk,
         const endElement &neighbour = link_ends[link];
 
         next = _srcs[current];
-        weight = dist[current] + pi[current] - pi[next] - neighbour.weight;
+        weight = dist[current]  - neighbour.weight;
 
         if (weight < dist[snk] && weight < dist[next]) {
 
@@ -474,7 +471,7 @@ int undirected_graph::dijkstra(const int src, const int snk,
 }
 int undirected_graph::dijkstra(const int src, const int snk,
                                const vector<int> &caps) {
-  return dijkstra(src, snk, caps, dist, width, flow, pi, Q);
+  return dijkstra(src, snk, caps, dist, width, flow, Q);
 }
 
 int undirected_graph::dijkstra(const int src, const int snk,
@@ -542,10 +539,9 @@ pair<int, int> undirected_graph::getMinCostMaxFlow(const int src, const int snk,
   fill(dist.end(), dist.end(), INF);
   fill(width.begin(), width.end(), 0);
   fill(flow.begin(), flow.end(), 0);
-  fill(pi.begin(), pi.end(), 0);
+  // fill(pi.begin(), pi.end(), 0);
 
-  dist[src] = 0;
-  width[src] = INF;
+
   vector<int> caps(link_num);
   for (size_t i = 0; i < ecaps.size(); i++) {
     int link = out2inLink_map[2 * i];
@@ -582,7 +578,7 @@ pair<int, int> undirected_graph::getMinCostMaxFlowP(const int src,
   vector<int> dist(vertex_num, INF);
   vector<int> width(vertex_num, 0);
   vector<int> flow(link_num, 0);
-  vector<int> pi(vertex_num, 0);
+
   Fixed_heap Q(vertex_num);
 
   dist[src] = 0;
@@ -595,7 +591,7 @@ pair<int, int> undirected_graph::getMinCostMaxFlowP(const int src,
   }
 
   int totflow = 0, totcost = 0;
-  int amt = dijkstra(src, snk, caps, dist, width, flow, pi, Q);
+  int amt = dijkstra(src, snk, caps, dist, width, flow,  Q);
   while (amt > 0) {
     totflow += amt;
     for (int x = snk; x != src; x = dad[x].first) {
@@ -609,7 +605,7 @@ pair<int, int> undirected_graph::getMinCostMaxFlowP(const int src,
         totcost -= amt * getWeight(link);
       }
     }
-    amt = dijkstra(src, snk, caps, dist, width, flow, pi, Q);
+    amt = dijkstra(src, snk, caps, dist, width, flow, Q);
   }
 
   return make_pair(totflow, totcost);
@@ -623,7 +619,7 @@ void undirected_graph::getMinCostMaxFlow(int src, const int snk,
   fill(dist.end(), dist.end(), INF);
   fill(width.begin(), width.end(), 0);
   fill(flow.begin(), flow.end(), 0);
-  fill(pi.begin(), pi.end(), 0);
+
 
   dist[src] = 0;
   width[src] = INF;
@@ -687,56 +683,132 @@ int undirected_graph::path_cost(const vector<int> &path) const {
   }
   return re;
 }
+char *Loc_choose::solve() {
+  value_supper = user_node_num * serice_price;
+  vector<pair<int, int>> single_server;
+  for (int v = 0; v < network_node_num; v++) {
+    vector<int> caps = orignal_caps;
+    caps[v] = totCap;
+    single_server.push_back(
+        graph.getMinCostMaxFlow(virtual_source, virtual_target, caps));
+  }
+  for (int v = 0; v < network_node_num; v++) {
+    single_server[v].second += serice_price;
+    if ((totCap == single_server[v].first) &&
+        (single_server[v].second < value_supper)) {
+      value_supper = single_server[v].second;
+    }
+  }
+
+  char *topo_file = new char[1024];
+  return topo_file;
+}
 }
 
 // You need to complete the function
 void deploy_server(char *topo[MAX_EDGE_NUM], int line_num, char *filename) {
+  int max_line_length = 1024;
 
-  char line[10000];
+  char *delim = " ";
+  char line[max_line_length];
   strcpy(line, topo[0]);
-  char *temp = strtok(line, " ");
-  int V = atoi(temp);
-  temp = strtok(NULL, " ");
-  int E = atoi(temp);
-  temp = strtok(NULL, " ");
-  int D = atoi(temp);
+  char *temp_str = strtok(line, delim);
+  int network_node_num = atoi(temp_str);
+  temp_str = strtok(NULL, delim);
+  int network_link_num = atoi(temp_str);
+  temp_str = strtok(NULL, delim);
+  int user_node_num = atoi(temp_str);
+
+  int vir_source = network_node_num;
+  int vir_target = vir_source + 1;
+
+  vector<int> network_to_vir_source_link(network_node_num);
+  vector<int> network_node_user_map(network_node_num, -1);
 
   strcpy(line, topo[2]);
-  temp = strtok(line, " ");
+  temp_str = strtok(line, delim);
 
-  int serice_value = atoi(temp);
+  int serice_value = atoi(temp_str);
 
-  int i = 4;
+  vector<int> srcs, snks, caps, weights;
+
+  for (int v = 0; v < network_node_num; v++) {
+    srcs.push_back(vir_source);
+    snks.push_back(v);
+    caps.push_back(0);
+    weights.push_back(0);
+    network_to_vir_source_link[v] = v;
+  }
+
+  int line_id = 4;
   strcpy(line, topo[4]);
-  vector<int> srcs, snks, caps, ws;
-  while (strlen(line) > 0) {
+  int i=0;
+  while(i< network_link_num){
+    i++;
     int src, snk, cap, w;
 
-    temp = strtok(line, " ");
-    src = atoi(temp);
-    temp = strtok(NULL, " ");
-    snk = atoi(temp);
-    temp = strtok(NULL, " ");
-    cap = atoi(temp);
-    temp = strtok(NULL, " ");
-    w = atoi(temp);
+    temp_str = strtok(line, delim);
+    src = atoi(temp_str);
+    temp_str = strtok(NULL, delim);
+    snk = atoi(temp_str);
+    temp_str = strtok(NULL, delim);
+    cap = atoi(temp_str);
+    temp_str = strtok(NULL, delim);
+    w = atoi(temp_str);
 
     srcs.push_back(src);
     snks.push_back(snk);
     caps.push_back(cap);
-    ws.push_back(w);
+    weights.push_back(w);
 
-    strcpy(line, topo[i++]);
+    strcpy(line, topo[line_id++]);
+  }
+
+  line_id++;
+
+
+  int totCap = 0;
+  i=0;
+  while(i< user_node_num){
+    strcpy(line, topo[line_id++]);
+    i++;
+    int user_node, network_node, bw;
+    temp_str = strtok(line, delim);
+    user_node = atoi(temp_str);
+
+    temp_str = strtok(NULL, delim);
+    network_node = atoi(temp_str);
+    temp_str = strtok(NULL, delim);
+    bw = atoi(temp_str);
+
+    network_node_user_map[network_node] = user_node;
+
+    srcs.push_back(network_node);
+    snks.push_back(vir_target);
+    weights.push_back(0);
+    caps.push_back(bw);
+    totCap += bw;
   }
 
   raptor::undirected_graph graph;
-  graph.initial(srcs, snks, ws);
+  graph.initial(srcs, snks, weights);
+
+  raptor::Loc_choose loc_choose(graph, network_node_num, user_node_num,
+                                serice_value, vir_source, vir_target,
+                                network_to_vir_source_link,
+                                network_node_user_map, totCap, caps);
+
+  char *topo_file = loc_choose.solve();
 
   // Output demo``''
-  char *topo_file = (char *)"17\n\n0 8 0 20\n21 8 0 20\n9 11 1 13\n21 22 2 "
-                            "20\n23 22 2 8\n1 3 3 11\n24 3 3 17\n27 3 3 26\n24 "
-                            "3 3 10\n18 17 4 11\n1 19 5 26\n1 16 6 15\n15 13 7 "
-                            "13\n4 5 8 18\n2 25 9 15\n0 7 10 10\n23 24 11 23";
+  // char *topo_file = (char *)"17\n\n0 8 0 20\n21 8 0 20\n9 11 1 13\n21 22 2 "
+  //                           "20\n23 22 2 8\n1 3 3 11\n24 3 3 17\n27 3 3
+  //                           26\n24 "
+  //                           "3 3 10\n18 17 4 11\n1 19 5 26\n1 16 6 15\n15 13
+  //                           7 "
+  //                           "13\n4 5 8 18\n2 25 9 15\n0 7 10 10\n23 24 11
+  //                           23";
 
   write_result(topo_file, filename);
+  delete[] topo_file;
 }
