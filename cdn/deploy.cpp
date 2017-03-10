@@ -87,6 +87,7 @@ void undirected_graph::initial(const vector<int> &esrcs,
   link_num = srcs.size();
   in2outLink_map.resize(link_num);
   out2inLink_map.resize(link_num);
+  inPeerLinkMap.resize(link_num);
   flow.resize(link_num, 0);
 
   vector<tempElment> tContian;
@@ -193,7 +194,12 @@ void undirected_graph::initial(const vector<int> &esrcs,
   }
 
   for (size_t i = 0; i < srcs.size(); i++) {
+
     int temp;
+    temp = in2outLink_map[i];
+    temp = getPeerLink(temp);
+    inPeerLinkMap[i] = out2inLink_map[temp];
+
     findSrc(i, temp);
     assert(temp == srcs[i]);
   }
@@ -404,13 +410,14 @@ bool undirected_graph::bicompute_shortest_path_dijkstra(const int src,
 
 int undirected_graph::dijkstra(const int src, const int snk,
                                const vector<int> &caps, vector<int> &dist,
-                               vector<int> &width, vector<int> &flow, Fixed_heap &Q) {
+                               vector<int> &width, vector<int> &flow,
+                               Fixed_heap &Q) {
 
   size_t j, outDegree, link, next;
   int current;
   int weight;
 
-  fill(dist.end(), dist.end(), INF);
+  fill(dist.begin(), dist.end(), INF);
   fill(width.begin(), width.end(), 0);
   dist[src] = 0;
   width[src] = INF;
@@ -439,7 +446,7 @@ int undirected_graph::dijkstra(const int src, const int snk,
 
         next = neighbour.snk;
 
-        weight = dist[current]  + neighbour.weight;
+        weight = dist[current] + neighbour.weight;
         if (weight < dist[snk] && weight < dist[next]) {
 
           dist[next] = weight;
@@ -448,13 +455,15 @@ int undirected_graph::dijkstra(const int src, const int snk,
           Q.push(make_pair(weight, next));
         }
       }
-      link = getPeerLink(link);
+
+      link = inPeerLinkMap[link];
+
       cap = (flow[link]);
       if (cap > 0) {
         const endElement &neighbour = link_ends[link];
 
-        next = _srcs[current];
-        weight = dist[current]  - neighbour.weight;
+        next = _srcs[link];
+        weight = dist[current] - neighbour.weight;
 
         if (weight < dist[snk] && weight < dist[next]) {
 
@@ -539,14 +548,13 @@ pair<int, int> undirected_graph::getMinCostMaxFlow(const int src, const int snk,
   fill(dist.end(), dist.end(), INF);
   fill(width.begin(), width.end(), 0);
   fill(flow.begin(), flow.end(), 0);
-  // fill(pi.begin(), pi.end(), 0);
-
 
   vector<int> caps(link_num);
   for (size_t i = 0; i < ecaps.size(); i++) {
     int link = out2inLink_map[2 * i];
     caps[link] = ecaps[i];
-    caps[getPeerLink(link)] = ecaps[i];
+    link = out2inLink_map[2 * i + 1];
+    caps[link] = ecaps[i];
   }
 
   int totflow = 0, totcost = 0;
@@ -558,10 +566,10 @@ pair<int, int> undirected_graph::getMinCostMaxFlow(const int src, const int snk,
 
       if (1 == ((dad[x].second) % 2)) {
         flow[link] += amt;
-        totcost += amt * getWeight(link);
+        totcost += amt * link_ends[link].weight;
       } else {
         flow[link] -= amt;
-        totcost -= amt * getWeight(link);
+        totcost -= amt * link_ends[link].weight;
       }
     }
     amt = dijkstra(src, snk, caps);
@@ -587,11 +595,12 @@ pair<int, int> undirected_graph::getMinCostMaxFlowP(const int src,
   for (size_t i = 0; i < ecaps.size(); i++) {
     int link = out2inLink_map[2 * i];
     caps[link] = ecaps[i];
-    caps[getPeerLink(link)] = ecaps[i];
+    link = out2inLink_map[2 * i + 1];
+    caps[link] = ecaps[i];
   }
 
   int totflow = 0, totcost = 0;
-  int amt = dijkstra(src, snk, caps, dist, width, flow,  Q);
+  int amt = dijkstra(src, snk, caps, dist, width, flow, Q);
   while (amt > 0) {
     totflow += amt;
     for (int x = snk; x != src; x = dad[x].first) {
@@ -599,10 +608,10 @@ pair<int, int> undirected_graph::getMinCostMaxFlowP(const int src,
 
       if (1 == ((dad[x].second) % 2)) {
         flow[link] += amt;
-        totcost += amt * getWeight(link);
+        totcost += amt * link_ends[link].weight;
       } else {
         flow[link] -= amt;
-        totcost -= amt * getWeight(link);
+        totcost -= amt * link_ends[link].weight;
       }
     }
     amt = dijkstra(src, snk, caps, dist, width, flow, Q);
@@ -620,14 +629,14 @@ void undirected_graph::getMinCostMaxFlow(int src, const int snk,
   fill(width.begin(), width.end(), 0);
   fill(flow.begin(), flow.end(), 0);
 
-
   dist[src] = 0;
   width[src] = INF;
   vector<int> caps(link_num);
   for (size_t i = 0; i < ecaps.size(); i++) {
     int link = out2inLink_map[2 * i];
     caps[link] = ecaps[i];
-    caps[getPeerLink(link)] = ecaps[i];
+    link = out2inLink_map[2 * i + 1];
+    caps[link] = ecaps[i];
   }
   int amt = dijkstra(src, snk, caps);
   while (amt > 0) {
@@ -670,7 +679,7 @@ bool undirected_graph::isValidatePath(const int &src, const int &snk,
       return false;
     }
 
-    next = next;
+    current = next;
   }
 
   return next == snk;
@@ -689,8 +698,9 @@ char *Loc_choose::solve() {
   for (int v = 0; v < network_node_num; v++) {
     vector<int> caps = orignal_caps;
     caps[v] = totCap;
-    single_server.push_back(
-        graph.getMinCostMaxFlow(virtual_source, virtual_target, caps));
+    pair<int, int> one_elem =
+        graph.getMinCostMaxFlow(virtual_source, virtual_target, caps);
+    single_server.push_back(one_elem);
   }
   for (int v = 0; v < network_node_num; v++) {
     single_server[v].second += serice_price;
@@ -708,11 +718,10 @@ char *Loc_choose::solve() {
 // You need to complete the function
 void deploy_server(char *topo[MAX_EDGE_NUM], int line_num, char *filename) {
   int max_line_length = 1024;
-
+  size_t str_len = 1023;
   char *delim = " ";
-  char line[max_line_length];
-  strcpy(line, topo[0]);
-  char *temp_str = strtok(line, delim);
+
+  char *temp_str = strtok(topo[0], delim);
   int network_node_num = atoi(temp_str);
   temp_str = strtok(NULL, delim);
   int network_link_num = atoi(temp_str);
@@ -725,10 +734,9 @@ void deploy_server(char *topo[MAX_EDGE_NUM], int line_num, char *filename) {
   vector<int> network_to_vir_source_link(network_node_num);
   vector<int> network_node_user_map(network_node_num, -1);
 
-  strcpy(line, topo[2]);
-  temp_str = strtok(line, delim);
+  temp_str = strtok(topo[2], delim);
 
-  int serice_value = atoi(temp_str);
+  int server_price = atoi(temp_str);
 
   vector<int> srcs, snks, caps, weights;
 
@@ -741,13 +749,14 @@ void deploy_server(char *topo[MAX_EDGE_NUM], int line_num, char *filename) {
   }
 
   int line_id = 4;
-  strcpy(line, topo[4]);
-  int i=0;
-  while(i< network_link_num){
+
+  int i = 0;
+  while (i < network_link_num) {
+
     i++;
     int src, snk, cap, w;
 
-    temp_str = strtok(line, delim);
+    temp_str = strtok(topo[line_id++], delim);
     src = atoi(temp_str);
     temp_str = strtok(NULL, delim);
     snk = atoi(temp_str);
@@ -760,20 +769,17 @@ void deploy_server(char *topo[MAX_EDGE_NUM], int line_num, char *filename) {
     snks.push_back(snk);
     caps.push_back(cap);
     weights.push_back(w);
-
-    strcpy(line, topo[line_id++]);
   }
 
   line_id++;
 
-
   int totCap = 0;
-  i=0;
-  while(i< user_node_num){
-    strcpy(line, topo[line_id++]);
+  i = 0;
+  while (i < user_node_num) {
+
     i++;
     int user_node, network_node, bw;
-    temp_str = strtok(line, delim);
+    temp_str = strtok(topo[line_id++], delim);
     user_node = atoi(temp_str);
 
     temp_str = strtok(NULL, delim);
@@ -794,7 +800,7 @@ void deploy_server(char *topo[MAX_EDGE_NUM], int line_num, char *filename) {
   graph.initial(srcs, snks, weights);
 
   raptor::Loc_choose loc_choose(graph, network_node_num, user_node_num,
-                                serice_value, vir_source, vir_target,
+                                server_price, vir_source, vir_target,
                                 network_to_vir_source_link,
                                 network_node_user_map, totCap, caps);
 

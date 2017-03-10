@@ -32,7 +32,7 @@ ifeq ($(SRCSUF),cpp)
 	CFLAGS     =  -pedantic -W    -std=c++11    -DHAVE_CONFIG_H -Wlong-long
 	LFLAGS    =   -pedantic -W 
 else
-	CC=clang
+	CC=gcc
 	CLANG=clang
 
 	CFLAGS     =  -pedantic -W -Wall      -DHAVE_CONFIG_H -Wlong-long

@@ -13,6 +13,7 @@
 #include <set>
 #include <vector>
 
+#include <utility>
 namespace raptor {
 
 using namespace std;
@@ -96,6 +97,7 @@ private:
 
   vector<int> in2outLink_map; // link_ends  --> orignal link
   vector<int> out2inLink_map; // orginal link --> link_end
+  vector<int> inPeerLinkMap;  // link_end peer link
 
   vector<bool> found;
   VI dist, width, flow;
