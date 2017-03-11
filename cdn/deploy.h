@@ -184,6 +184,25 @@ public:
     return link_ends[out2inLink_map[link]].weight;
   }
 
+  inline  void setWeight(const int link, int w)  {
+    link_ends[out2inLink_map[link]].weight=w;
+  }
+  
+  int getAdj(int v, int i) const { return in2outLink_map[outIndex[v] + i]; }
+  int getReAdj(int v, int i) const {
+    return in2outLink_map[link_starts[inIndex[v] + i].link];
+  }
+
+  void dijkstra_limit_tree(const int src, const int limit,
+                           vector<pair<int, int>> &tree);
+
+  /**
+   * greed method to compute approximation minimum vertex cover
+   *
+   * @param nodes
+   */
+  void getMinVertexCover(vector<int> &nodes);
+
   /**
    *
    *
@@ -213,7 +232,7 @@ public:
 
   /**
    *  sequence call
-   *
+   * compute the mincost maxflow from src to snk
    * @param src
    * @param snk
    * @param caps  undirected link capacity
@@ -225,7 +244,7 @@ public:
 
   /**
    *  parallel call
-   *
+   * compute the mincost maxflow from src to snk
    * @param src
    * @param snk
    * @param caps undirected link capacity
@@ -244,6 +263,25 @@ public:
 };
 
 class Loc_choose {
+
+  struct Server {
+    int success_bw;
+    int total_price;
+    set<int> locs;
+    map<int, int>  reach_node_value;
+    Server() : success_bw(0), total_price(0) {}
+    bool operator<(const Server &other) const {
+      if (0 == success_bw) {
+        return 0 == other.success_bw;
+      }
+      if (0 == other.success_bw) {
+        return true;
+      }
+      return (total_price / (success_bw + 0.01)) <
+             (other.total_price / (other.success_bw + 0.01));
+    }
+  };
+
 private:
   undirected_graph &graph;
 
@@ -251,33 +289,78 @@ private:
 
   int user_node_num;
 
-  int serice_price;
+  int server_price;
 
   int virtual_source, virtual_target;
 
-  const vector<int> &network_to_vir_source_link;
+  int target_link_start;
+  
   const vector<int> &network_node_user_map;
+  const vector<int> &user_demand;
 
+  
   int totCap;
   const vector<int> &orignal_caps;
 
-  vector<int> best_dc_locs;
-
   int value_supper, value_lower;
+  vector<Server> server_candiate;
+
+  int lest_link_price;
+  int large_link_price;
+  double mean_link_price;
+  int middle_link_price;
+
+  int smallest_user;
+  int large_user;
+
+  vector<vector<int>> server_candiate_locs;
+  
+  vector<int> user_to_network_map;
+  
+  void initial();
+
+  void forbidVirLinks();
+  void releaseVirLinks();
+  
+  void lower_update();
+
+  void supper_update();
+
+  bool smallestUer();
+
+  void tryKServer(const int k);
+
+  vector<bool> user_direct_server;
+  
+  set<int> choosedServer;
+
+  char *output();
 
 public:
   Loc_choose(undirected_graph &g, int network_n_num, int user_n_num,
              int serice_p, int vir_source, int vir_target,
-             const vector<int> &net_to_vir_links, const vector<int> &node_map,
-             int totC, const vector<int> &caps)
+             int target_vir_links, const vector<int> &node_map,
+             const vector<int> &dcaps, const vector<int> &caps)
       : graph(g), network_node_num(network_n_num), user_node_num(user_n_num),
-        serice_price(serice_p), virtual_source(vir_source),
+        server_price(serice_p), virtual_source(vir_source),
         virtual_target(vir_target),
-        network_to_vir_source_link(net_to_vir_links),
-        network_node_user_map(node_map), totCap(totC), orignal_caps(caps) {
+        target_link_start(target_vir_links),
+        network_node_user_map(node_map), user_demand(dcaps),
+        orignal_caps(caps) {
+    totCap = 0;
 
-    value_supper = INF;
+    for (vector<int>::const_iterator it = user_demand.begin();
+         it != user_demand.end(); it++) {
+      totCap += *it;
+    }
+    server_candiate_locs.resize(user_node_num);
+    user_to_network_map.resize(user_node_num);
+    
+    value_supper = user_demand.size() * server_price;
+
     value_lower = 0;
+    user_direct_server.resize(user_node_num, false);
+    initial();
   }
   char *solve();
 };

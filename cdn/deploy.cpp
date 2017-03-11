@@ -222,6 +222,89 @@ bool undirected_graph::findRhs(const int link, const int lhs, int &rhs) const {
   return false;
 }
 
+void undirected_graph::dijkstra_limit_tree(const int src, const int limit,
+                                           vector<pair<int, int>> &tree) {
+
+  tree.clear();
+
+  size_t j, outDegree, link, next;
+  int current;
+  int weight;
+  vector<int> dis(vertex_num, INF);
+  vector<int> preLink(vertex_num, link_num + 1);
+  vector<int> parent(vertex_num, -1);
+  dis[src] = 0;
+  Fixed_heap Q(vertex_num);
+
+  Q.push(make_pair(0, src));
+
+  while (!Q.empty()) {
+    PII p = Q.top();
+    current = p.second;
+
+    Q.pop();
+
+    outDegree = getOutDegree(current);
+    int current_weight = p.first;
+    for (j = 0; j < outDegree; j++) {
+      link = outIndex[current] + j;
+      const endElement &neighbour = link_ends[link];
+      weight = current_weight + neighbour.weight;
+      next = neighbour.snk;
+      if (weight <= limit && weight < dis[next]) {
+        parent[next] = current;
+        preLink[next] = link;
+        dis[next] = weight;
+        Q.push(make_pair(weight, next));
+      }
+    }
+  }
+
+  for (int i = 0; i < vertex_num; i++) {
+    if (dis[i] < INF) {
+      tree.push_back(make_pair(i, dis[i]));
+    }
+  }
+}
+
+void undirected_graph::getMinVertexCover(vector<int> &nodes) {
+  int current, j, outDegree, next, link;
+  nodes.clear();
+  Fixed_heap Q(vertex_num);
+  vector<int> degrees(vertex_num);
+  for (int i = 0; i < vertex_num; i++) {
+    int outDegree = getOutDegree(i);
+    Q.push(make_pair(-outDegree, i));
+    degrees[i] = -outDegree;
+  }
+
+  vector<bool> check(link_num, false);
+
+  while (!Q.empty()) {
+    PII p = Q.top();
+    current = p.second;
+    Q.pop();
+    check[current] = true;
+
+    if (degrees[current] >= 0) {
+      continue;
+    }
+
+    nodes.push_back(current);
+    outDegree = getOutDegree(current);
+
+    for (j = 0; j < outDegree; j++) {
+      link = outIndex[current] + j;
+      const endElement &neighbour = link_ends[link];
+      next = neighbour.snk;
+      if (!check[next]) {
+        degrees[next]++;
+        Q.push(make_pair(degrees[next], next));
+      }
+    }
+  }
+}
+
 bool undirected_graph::compute_shortest_path_dijkstra(const int src,
                                                       const int snk,
 
@@ -244,7 +327,7 @@ bool undirected_graph::compute_shortest_path_dijkstra(const int src,
   dis[src] = 0;
   Fixed_heap Q(vertex_num);
 
-  Q.push(make_pair(0.0, src));
+  Q.push(make_pair(0, src));
 
   while (!Q.empty()) {
     PII p = Q.top();
@@ -301,14 +384,14 @@ bool undirected_graph::bicompute_shortest_path_dijkstra(const int src,
 
   Fixed_heap Q(vertex_num);
 
-  Q.push(make_pair(0.0, src));
+  Q.push(make_pair(0, src));
 
   vector<int> bdis(vertex_num, INF);
   vector<int> bpreLink(vertex_num, -1);
   bdis[snk] = 0;
   Fixed_heap bQ(vertex_num);
 
-  bQ.push(make_pair(0.0, snk));
+  bQ.push(make_pair(0, snk));
 
   bool re = false;
   int best_dis = INF;
@@ -413,7 +496,7 @@ int undirected_graph::dijkstra(const int src, const int snk,
                                vector<int> &width, vector<int> &flow,
                                Fixed_heap &Q) {
 
-  size_t j, outDegree, link, next;
+  int j, outDegree, link, next;
   int current;
   int weight;
 
@@ -498,7 +581,7 @@ int undirected_graph::dijkstra(const int src, const int snk,
   dis[src] = 0;
   Fixed_heap Q(vertex_num);
 
-  Q.push(make_pair(0.0, src));
+  Q.push(make_pair(0, src));
 
   while (!Q.empty()) {
 
@@ -692,26 +775,331 @@ int undirected_graph::path_cost(const vector<int> &path) const {
   }
   return re;
 }
+
+void Loc_choose::initial() {
+
+  vector<pair<int, int>> demandC;
+  int tempC = totCap;
+
+  for (int v = 0; v < network_node_num; v++) {
+    if (network_node_user_map[v] > -1) {
+      int user_node = network_node_user_map[v];
+
+      user_to_network_map[user_node] = v;
+
+      int outDegree = graph.getOutDegree(v);
+      int sumBw = 0;
+      for (int i = 0; i < outDegree; i++) {
+        int link = graph.getAdj(v, i);
+        sumBw += orignal_caps[link / 2];
+      }
+      /**
+       * if for a directly connect user node when sum of  out link
+       *bandwidth less than user demand then this node must be a server
+       *
+       */
+
+      if (sumBw < 2 * user_demand[user_node]) {
+        user_direct_server[user_node] = true;
+        choosedServer.insert(v);
+        tempC -= user_demand[user_node];
+      } else {
+        demandC.push_back(make_pair(user_demand[user_node], user_node));
+      }
+    }
+  }
+
+  sort(demandC.rbegin(), demandC.rend());
+  for (vector<pair<int, int>>::iterator it = demandC.begin();
+       it != demandC.end(); it++) {
+
+    /**
+     *  when one user demand greater or equal then sum of all
+     * other users demand then this user direct connect node must be
+     * a server
+     *
+     */
+    int user_node = it->second;
+    int v = user_to_network_map[user_node];
+
+    if (!user_direct_server[user_node]) {
+      if (2 * (it->first) >= tempC) {
+
+        user_direct_server[user_node] = true;
+        choosedServer.insert(v);
+        tempC -= it->first;
+      }
+    }
+  }
+}
+void Loc_choose::lower_update() {
+
+  sort(server_candiate.begin(), server_candiate.end());
+  int cap = 0;
+  int temp_value = 0;
+  for (size_t i = 0; i < server_candiate.size(); i++) {
+    if (cap + server_candiate[i].success_bw < totCap) {
+      cap += server_candiate[i].success_bw;
+      temp_value += server_candiate[i].total_price;
+    } else {
+      temp_value += server_candiate[i].total_price *
+                    ((totCap - cap) / (server_candiate[i].success_bw + 0.01));
+      if (value_lower > temp_value) {
+        value_lower = temp_value;
+        break;
+      }
+    }
+  }
+}
+
+void Loc_choose::supper_update() {
+  for (size_t i = 0; i < server_candiate.size(); i++) {
+    if (totCap == server_candiate[i].success_bw) {
+      if (value_supper > server_candiate[i].total_price) {
+        value_supper = server_candiate[i].total_price;
+      }
+    }
+  }
+}
+void Loc_choose::forbidVirLinks() {
+  for (int v = 0; v < network_node_num; v++) {
+    graph.setWeight(2 * v, INF);
+    graph.setWeight(2 * v + 1, INF);
+  }
+  for (int link = target_link_start; link < graph.getLink_num(); link++) {
+    graph.setWeight(link, INF);
+  }
+}
+void Loc_choose::releaseVirLinks() {
+  for (int v = 0; v < network_node_num; v++) {
+    graph.setWeight(2 * v, 0);
+    graph.setWeight(2 * v + 1, 0);
+  }
+  for (int link = target_link_start; link < graph.getLink_num(); link++) {
+    graph.setWeight(link, 0);
+  }
+}
+bool Loc_choose::smallestUer() {
+
+  if (2 == user_node_num) {
+    int large_user = 0;
+
+    if (user_demand[0] < user_demand[1]) {
+      large_user = 1;
+    }
+    int loc = user_to_network_map[large_user];
+    vector<int> caps = orignal_caps;
+
+    caps[loc] = totCap;
+
+    pair<int, int> one_elem =
+        graph.getMinCostMaxFlow(virtual_source, virtual_target, caps);
+
+    if (one_elem.first == totCap) {
+      Server temp;
+      temp.locs.insert(loc);
+      temp.success_bw = totCap;
+      temp.total_price = one_elem.second + server_price;
+      server_candiate.push_back(temp);
+    }
+
+    return true;
+  }
+  if (3 == user_node_num) {
+    int large_user = 0;
+
+    if (user_demand[0] < user_demand[1]) {
+      large_user = 1;
+    }
+    if (user_demand[large_user] < user_demand[2]) {
+      large_user = 2;
+    }
+
+    if (2 * user_demand[large_user] >= totCap) {
+    }
+  }
+
+  return false;
+}
+void Loc_choose::tryKServer(const int k) {}
+
+char *Loc_choose::output() {
+  int best_loc = -1;
+  int best_value = INF;
+  for (size_t i = 0; i < server_candiate.size(); i++) {
+    if (totCap == server_candiate[i].success_bw) {
+      if (best_value > server_candiate[i].total_price) {
+        best_loc = i;
+        best_value = server_candiate[i].total_price;
+      }
+    }
+  }
+  vector<int> caps = orignal_caps;
+  for (set<int>::iterator it = server_candiate[best_loc].locs.begin();
+       it != server_candiate[best_loc].locs.end(); it++) {
+    caps[*it] = totCap;
+  }
+
+  vector<vector<int>> node_paths;
+  vector<int> bws;
+  graph.getMinCostMaxFlow(virtual_source, virtual_target, caps, node_paths,
+                          bws);
+
+  size_t len = 1024;
+  for (size_t i = 0; i < node_paths.size(); i++) {
+    len += 8 * node_paths[i].size();
+  }
+  len += 8 * node_paths.size();
+  char *topo_file = new char[len];
+  fill(topo_file, topo_file + len - 1, 0);
+  sprintf(topo_file, "%d\n", node_paths.size());
+  size_t start = strlen(topo_file);
+
+  for (size_t i = 0; i < node_paths.size(); i++) {
+    topo_file[start] = '\n';
+    start++;
+    size_t j = 1;
+    int last = 0;
+    for (size_t j = 1; j + 1 < node_paths[i].size(); j++) {
+      last = node_paths[i][j];
+      sprintf(topo_file + start, "%d ", last);
+      start = strlen(topo_file);
+    }
+
+    sprintf(topo_file + start, "%d ", network_node_user_map[last]);
+    start = strlen(topo_file);
+    sprintf(topo_file + start, "%d", bws[i]);
+    start = strlen(topo_file);
+  }
+
+  return topo_file;
+}
 char *Loc_choose::solve() {
-  value_supper = user_node_num * serice_price;
-  vector<pair<int, int>> single_server;
+
+  /**
+   *  there is no user node
+   *
+   */
+
+  if (0 == user_node_num) {
+
+    char *topo_file = new char[1024];
+    fill(topo_file, topo_file + 1023, 0);
+    sprintf(topo_file, "0\n\n");
+    return topo_file;
+  }
+
+  server_candiate.clear();
+  Server temp;
+
+  forbidVirLinks();
+
+  for (int user_node = 0; user_node < user_node_num; user_node++) {
+    
+    int v = user_to_network_map[user_node];
+    temp.locs.insert(v);
+    
+    if (user_direct_server[user_node]) {
+      continue;
+    }
+
+    int limit = server_price / user_demand[user_node];
+
+
+    vector<pair<int, int>> tree;
+    graph.dijkstra_limit_tree(v, limit, tree);
+    server_candiate_locs[v].clear();
+
+    for (vector<pair<int, int>>::iterator it = tree.begin(); it != tree.end();
+         it++) {
+      if (virtual_source != it->first) {
+        server_candiate_locs[v].push_back(it->first);
+      }
+    }
+
+    if (1 == server_candiate_locs[v].size()) {
+      user_direct_server[v] = true;
+      choosedServer.insert(v);
+    }
+    sort(server_candiate_locs[v].begin(), server_candiate_locs[v].end());
+
+
+  }
+
+  releaseVirLinks();
+
+  temp.success_bw = totCap;
+  temp.total_price = user_node_num * server_price;
+  server_candiate.push_back(temp);
+
+  bool state = true;
+  vector<int> haveCheck;
+
+  for (int v = 0; v < user_node_num; v++) {
+    std::vector<int> union_data;
+    set_union(server_candiate_locs[v].begin(), server_candiate_locs[v].end(),
+              haveCheck.begin(), haveCheck.end(),
+              std::back_inserter(union_data));
+    if (union_data.size() !=
+        (server_candiate_locs[v].size() + haveCheck.size())) {
+      state = false;
+      break;
+    }
+    sort(union_data.begin(), union_data.end());
+    haveCheck = union_data;
+  }
+
+  if (state) {
+    return output();
+  }
+
+  if (smallestUer()) {
+
+    return output();
+  }
+
+  value_supper = user_node_num * server_price;
+
   for (int v = 0; v < network_node_num; v++) {
     vector<int> caps = orignal_caps;
     caps[v] = totCap;
     pair<int, int> one_elem =
         graph.getMinCostMaxFlow(virtual_source, virtual_target, caps);
-    single_server.push_back(one_elem);
+    Server temp;
+    temp.locs.insert(v);
+    temp.success_bw = one_elem.first;
+    temp.total_price = one_elem.second + server_price;
+
+    server_candiate.push_back(temp);
   }
+
   for (int v = 0; v < network_node_num; v++) {
-    single_server[v].second += serice_price;
-    if ((totCap == single_server[v].first) &&
-        (single_server[v].second < value_supper)) {
-      value_supper = single_server[v].second;
+
+    if ((totCap == server_candiate[v].success_bw) &&
+        (server_candiate[v].total_price < value_supper)) {
+      value_supper = server_candiate[v].total_price;
     }
   }
 
-  char *topo_file = new char[1024];
-  return topo_file;
+  /**
+   *  one server can support
+   *
+   */
+  if (value_supper <= 2 * server_price) {
+    return output();
+  }
+
+  value_lower = 2 * server_price;
+
+  for (int k = 0; k < 100; k++) {
+    lower_update();
+    supper_update();
+    if ((value_supper / server_price) == (value_lower / server_price)) {
+      return output();
+    }
+  }
+
+  return output();
 }
 }
 
@@ -731,8 +1119,7 @@ void deploy_server(char *topo[MAX_EDGE_NUM], int line_num, char *filename) {
   int vir_source = network_node_num;
   int vir_target = vir_source + 1;
 
-  vector<int> network_to_vir_source_link(network_node_num);
-  vector<int> network_node_user_map(network_node_num, -1);
+  vector<int> network_node_user_map(network_node_num, -100);
 
   temp_str = strtok(topo[2], delim);
 
@@ -745,7 +1132,6 @@ void deploy_server(char *topo[MAX_EDGE_NUM], int line_num, char *filename) {
     snks.push_back(v);
     caps.push_back(0);
     weights.push_back(0);
-    network_to_vir_source_link[v] = v;
   }
 
   int line_id = 4;
@@ -773,8 +1159,10 @@ void deploy_server(char *topo[MAX_EDGE_NUM], int line_num, char *filename) {
 
   line_id++;
 
-  int totCap = 0;
   i = 0;
+  int target_link_start = 2 * srcs.size();
+
+  vector<int> user_demand;
   while (i < user_node_num) {
 
     i++;
@@ -793,27 +1181,17 @@ void deploy_server(char *topo[MAX_EDGE_NUM], int line_num, char *filename) {
     snks.push_back(vir_target);
     weights.push_back(0);
     caps.push_back(bw);
-    totCap += bw;
+    user_demand.push_back(bw);
   }
 
   raptor::undirected_graph graph;
   graph.initial(srcs, snks, weights);
 
-  raptor::Loc_choose loc_choose(graph, network_node_num, user_node_num,
-                                server_price, vir_source, vir_target,
-                                network_to_vir_source_link,
-                                network_node_user_map, totCap, caps);
+  raptor::Loc_choose loc_choose(
+      graph, network_node_num, user_node_num, server_price, vir_source,
+      vir_target, target_link_start, network_node_user_map, user_demand, caps);
 
   char *topo_file = loc_choose.solve();
-
-  // Output demo``''
-  // char *topo_file = (char *)"17\n\n0 8 0 20\n21 8 0 20\n9 11 1 13\n21 22 2 "
-  //                           "20\n23 22 2 8\n1 3 3 11\n24 3 3 17\n27 3 3
-  //                           26\n24 "
-  //                           "3 3 10\n18 17 4 11\n1 19 5 26\n1 16 6 15\n15 13
-  //                           7 "
-  //                           "13\n4 5 8 18\n2 25 9 15\n0 7 10 10\n23 24 11
-  //                           23";
 
   write_result(topo_file, filename);
   delete[] topo_file;
