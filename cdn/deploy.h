@@ -149,6 +149,14 @@ public:
     out2inLink_map.clear();
   }
 
+  /**
+   * @brief initial undirected graph by undieced links
+   *
+   * @param esrcs  link source id
+   * @param esnks  link target id
+   * @param eweights  link weight
+   */
+
   void initial(const vector<int> &esrcs, const vector<int> &esnks,
                const vector<int> &eweights);
 
@@ -184,31 +192,38 @@ public:
     return link_ends[out2inLink_map[link]].weight;
   }
 
-  inline  void setWeight(const int link, int w)  {
-    link_ends[out2inLink_map[link]].weight=w;
+  inline void setWeight(const int link, int w) {
+    link_ends[out2inLink_map[link]].weight = w;
   }
-  
+
   int getAdj(int v, int i) const { return in2outLink_map[outIndex[v] + i]; }
   int getReAdj(int v, int i) const {
     return in2outLink_map[link_starts[inIndex[v] + i].link];
   }
 
+  /**
+   *
+   * compute shortest path tree which distance less or equal than limit
+   * @param src  source vertex id
+   * @param limit  distance limit
+   * @param tree  pair<int, int> is  pair of vertex id and distance.
+   */
   void dijkstra_limit_tree(const int src, const int limit,
                            vector<pair<int, int>> &tree);
 
   /**
    * greed method to compute approximation minimum vertex cover
    *
-   * @param nodes
+   * @param nodes choosed cover set
    */
   void getMinVertexCover(vector<int> &nodes);
 
   /**
+   *@brief compute shortest path which connect src and snk
    *
-   *
-   * @param src
-   * @param snk
-   * @param path
+   * @param src source vertex id
+   * @param snk target vertex id
+   * @param path __return__ link path
    *
    * @return true if find a path, false otherwise
    */
@@ -218,11 +233,12 @@ public:
                                       vector<int> &path);
 
   /**
+   *@brief compute a shortest path which connect src and snk by bidirection
+   *dijstra method
    *
-   *
-   * @param src
-   * @param snk
-   * @param path
+   * @param src source vertex id
+   * @param snk target vertex id
+   * @param path __return__ link path
    *
    * @return true if find a path, false otherwise
    */
@@ -251,14 +267,43 @@ public:
    *
    * @return maxflow  and total cost
    */
+
   pair<int, int> getMinCostMaxFlowP(const int src, const int snk,
                                     const vector<int> &caps);
-  void getMinCostMaxFlow(int src, const int snk, const vector<int> &caps,
-                         vector<vector<int>> &node_paths, vector<int> &bws);
 
+  /**
+   *
+   *
+   * @param src  the source vertex id
+   * @param snk  the target vertex id
+   * @param caps   undirected link capacity
+   * @param node_paths  __return__ min cost malfow split node paths
+   * @param bws  the bandwidth of every split flow
+   * @param node_sum_value corresponding sum of node value for this min cost max
+   * flow
+   */
+  void getMinCostMaxFlow(int src, const int snk, const vector<int> &caps,
+                         vector<vector<int>> &node_paths, vector<int> &bws,
+                         vector<int> &node_sum_value);
+
+  /**
+   * @brief check wether this path is connect src and snk
+   *
+   * @param src  source vertex id
+   * @param snk  target vertex id
+   * @param path  link path
+   *
+   * @return  true if path connects src and snk, false otherwise
+   */
   bool isValidatePath(const int &src, const int &snk,
                       const vector<int> &path) const;
-
+  /**
+   *
+   *
+   * @param path  link path
+   *
+   * @return  sum of weigth in this path
+   */
   int path_cost(const vector<int> &path) const;
 };
 
@@ -268,7 +313,7 @@ class Loc_choose {
     int success_bw;
     int total_price;
     set<int> locs;
-    map<int, int>  reach_node_value;
+    map<int, int> reach_node_value;
     Server() : success_bw(0), total_price(0) {}
     bool operator<(const Server &other) const {
       if (0 == success_bw) {
@@ -294,11 +339,10 @@ private:
   int virtual_source, virtual_target;
 
   int target_link_start;
-  
+
   const vector<int> &network_node_user_map;
   const vector<int> &user_demand;
 
-  
   int totCap;
   const vector<int> &orignal_caps;
 
@@ -314,14 +358,14 @@ private:
   int large_user;
 
   vector<vector<int>> server_candiate_locs;
-  
+
   vector<int> user_to_network_map;
-  
+
   void initial();
 
   void forbidVirLinks();
   void releaseVirLinks();
-  
+
   void lower_update();
 
   void supper_update();
@@ -331,20 +375,19 @@ private:
   void tryKServer(const int k);
 
   vector<bool> user_direct_server;
-  
+
   set<int> choosedServer;
 
   char *output();
 
 public:
   Loc_choose(undirected_graph &g, int network_n_num, int user_n_num,
-             int serice_p, int vir_source, int vir_target,
-             int target_vir_links, const vector<int> &node_map,
-             const vector<int> &dcaps, const vector<int> &caps)
+             int serice_p, int vir_source, int vir_target, int target_vir_links,
+             const vector<int> &node_map, const vector<int> &dcaps,
+             const vector<int> &caps)
       : graph(g), network_node_num(network_n_num), user_node_num(user_n_num),
         server_price(serice_p), virtual_source(vir_source),
-        virtual_target(vir_target),
-        target_link_start(target_vir_links),
+        virtual_target(vir_target), target_link_start(target_vir_links),
         network_node_user_map(node_map), user_demand(dcaps),
         orignal_caps(caps) {
     totCap = 0;
@@ -355,7 +398,7 @@ public:
     }
     server_candiate_locs.resize(user_node_num);
     user_to_network_map.resize(user_node_num);
-    
+
     value_supper = user_demand.size() * server_price;
 
     value_lower = 0;

@@ -706,11 +706,14 @@ pair<int, int> undirected_graph::getMinCostMaxFlowP(const int src,
 void undirected_graph::getMinCostMaxFlow(int src, const int snk,
                                          const vector<int> &ecaps,
                                          vector<vector<int>> &node_paths,
-                                         vector<int> &bws) {
+                                         vector<int> &bws,
+                                         vector<int> &node_sum_value) {
   assert(link_num == 2 * ecaps.size());
   fill(dist.end(), dist.end(), INF);
   fill(width.begin(), width.end(), 0);
   fill(flow.begin(), flow.end(), 0);
+  node_sum_value.resize(vertex_num, 0);
+  fill(node_sum_value.begin(), node_sum_value.end(), 0);
 
   dist[src] = 0;
   width[src] = INF;
@@ -739,13 +742,18 @@ void undirected_graph::getMinCostMaxFlow(int src, const int snk,
   vector<int> path;
   amt = dijkstra(src, snk, flow, path);
   while (amt > 0) {
+    int value = 0;
     bws.push_back(amt);
     vector<int> node_path;
     node_path.push_back(src);
     for (vector<int>::iterator it = path.begin(); it != path.end(); it++) {
       int link = *it;
+      value += amt * link_ends[link].weight;
+
       flow[link] -= amt;
       node_path.push_back(link_ends[link].snk);
+
+      node_sum_value[link_ends[link].snk] += value;
     }
     node_paths.push_back(node_path);
     amt = dijkstra(src, snk, flow, path);
@@ -942,8 +950,9 @@ char *Loc_choose::output() {
 
   vector<vector<int>> node_paths;
   vector<int> bws;
-  graph.getMinCostMaxFlow(virtual_source, virtual_target, caps, node_paths,
-                          bws);
+  vector<int> node_sum_value;
+  graph.getMinCostMaxFlow(virtual_source, virtual_target, caps, node_paths, bws,
+                          node_sum_value);
 
   size_t len = 1024;
   for (size_t i = 0; i < node_paths.size(); i++) {
@@ -995,16 +1004,15 @@ char *Loc_choose::solve() {
   forbidVirLinks();
 
   for (int user_node = 0; user_node < user_node_num; user_node++) {
-    
+
     int v = user_to_network_map[user_node];
     temp.locs.insert(v);
-    
+
     if (user_direct_server[user_node]) {
       continue;
     }
 
     int limit = server_price / user_demand[user_node];
-
 
     vector<pair<int, int>> tree;
     graph.dijkstra_limit_tree(v, limit, tree);
@@ -1022,8 +1030,6 @@ char *Loc_choose::solve() {
       choosedServer.insert(v);
     }
     sort(server_candiate_locs[v].begin(), server_candiate_locs[v].end());
-
-
   }
 
   releaseVirLinks();
