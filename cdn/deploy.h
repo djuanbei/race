@@ -252,11 +252,15 @@ public:
    * @param src
    * @param snk
    * @param caps  undirected link capacity
-   *
+   * @param outs sum of output bandwidth from every server
+   * @param ins sum of every user in bandwidth
+   * @param node_sum_value corresponding sum of node value for this min cost max
+   * *
    * @return  maxflow  and total cost
    */
   pair<int, int> getMinCostMaxFlow(const int src, const int snk,
-                                   const vector<int> &caps);
+                                   const vector<int> &caps, vector<int> &outs, vector<int> &ins,
+                                   vector<int> &node_sum_value);
 
   /**
    *  parallel call
@@ -279,12 +283,11 @@ public:
    * @param caps   undirected link capacity
    * @param node_paths  __return__ min cost malfow split node paths
    * @param bws  the bandwidth of every split flow
-   * @param node_sum_value corresponding sum of node value for this min cost max
+
    * flow
    */
   void getMinCostMaxFlow(int src, const int snk, const vector<int> &caps,
-                         vector<vector<int>> &node_paths, vector<int> &bws,
-                         vector<int> &node_sum_value);
+                         vector<vector<int>> &node_paths, vector<int> &bws);
 
   /**
    * @brief check wether this path is connect src and snk
@@ -309,13 +312,18 @@ public:
 
 class Loc_choose {
 
-  struct Server {
+  struct Server_loc {
     int success_bw;
     int total_price;
+    
     set<int> locs;
+    map<int, int> outBandwidth;
+    vector<int> user_in_bandwidth;
+    
     map<int, int> reach_node_value;
-    Server() : success_bw(0), total_price(0) {}
-    bool operator<(const Server &other) const {
+    
+    Server_loc() : success_bw(0), total_price(0) {}
+    bool operator<(const Server_loc &other) const {
       if (0 == success_bw) {
         return 0 == other.success_bw;
       }
@@ -347,7 +355,7 @@ private:
   const vector<int> &orignal_caps;
 
   int value_supper, value_lower;
-  vector<Server> server_candiate;
+  vector<Server_loc> server_candiate;
 
   int lest_link_price;
   int large_link_price;
@@ -361,25 +369,53 @@ private:
 
   vector<int> user_to_network_map;
 
+  vector<bool> user_direct_server;
+
+  set<int> choosedServer;
+
   void initial();
 
+  /** 
+   * @brief forbid all virtual links
+   * 
+   */
   void forbidVirLinks();
+  /** 
+   * @brief set weight of virtual link to 0
+   * 
+   */
   void releaseVirLinks();
 
   void lower_update();
 
   void supper_update();
 
+  /**
+   * @brief when the number of user is small then there are some condition to
+   * directly get optimization solution
+   *
+   *
+   * @return ture if find optimization solution, false otherwise
+   */
   bool smallestUer();
 
   void tryKServer(const int k);
 
-  vector<bool> user_direct_server;
+  void bestLayoutFlow(Server_loc &server);
 
-  set<int> choosedServer;
+  /**
+ * choose some vertices as servers then compute min cost max flow, if there sum
+ * of
+ * pre link value of node v greater or equal than server_price then add this v
+ * as a new server location
+ *
+ * @param server
+ * @param recursive is recursive call
+ */
+  void update(Server_loc &server, bool recursive=true);
 
   char *output();
-
+  double delete_para;
 public:
   Loc_choose(undirected_graph &g, int network_n_num, int user_n_num,
              int serice_p, int vir_source, int vir_target, int target_vir_links,
@@ -390,6 +426,7 @@ public:
         virtual_target(vir_target), target_link_start(target_vir_links),
         network_node_user_map(node_map), user_demand(dcaps),
         orignal_caps(caps) {
+    delete_para=0.5;
     totCap = 0;
 
     for (vector<int>::const_iterator it = user_demand.begin();
