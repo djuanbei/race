@@ -19,9 +19,9 @@ namespace raptor {
 using namespace std;
 
 class Fixed_heap {
-private:
-  vector<pair<int, int>> heap; // Fixed_heap of Keys
-  vector<int> indices;         // Each Key's position (index) in the Fixed_heap
+ private:
+  vector<pair<int, int>> heap;  // Fixed_heap of Keys
+  vector<int> indices;          // Each Key's position (index) in the Fixed_heap
 
   int size;
 
@@ -33,7 +33,7 @@ private:
 
   void percolateDown(int i);
 
-public:
+ public:
   Fixed_heap(int cap) : heap(cap), indices(cap, -1), size(0) {}
 
   bool empty() const { return 0 == size; }
@@ -56,7 +56,6 @@ public:
 
 const static int INF = numeric_limits<int>::max() / 4;
 class undirected_graph {
-
   typedef vector<int> VI;
 
   typedef vector<VI> VVI;
@@ -83,7 +82,7 @@ class undirected_graph {
     bool operator<(const tempElment &other) const { return src < other.src; }
   };
 
-private:
+ private:
   int vertex_num;
   int link_num;
 
@@ -95,9 +94,9 @@ private:
   vector<int> inIndex;
   vector<startElement> link_starts;
 
-  vector<int> in2outLink_map; // link_ends  --> orignal link
-  vector<int> out2inLink_map; // orginal link --> link_end
-  vector<int> inPeerLinkMap;  // link_end peer link
+  vector<int> in2outLink_map;  // link_ends  --> orignal link
+  vector<int> out2inLink_map;  // orginal link --> link_end
+  vector<int> inPeerLinkMap;   // link_end peer link
 
   vector<bool> found;
   VI dist, width, flow;
@@ -107,22 +106,19 @@ private:
   int getPeerLink(const int id) const { return id ^ 1; }
   bool _findSrc(const int link, int &src) const {
     src = vertex_num + 1;
-    if (link < 0 || link >= link_num)
-      return false;
+    if (link < 0 || link >= link_num) return false;
     src = _srcs[link];
     return true;
   }
   inline bool _findSnk(const int link, int &snk) const {
     snk = vertex_num + 1;
-    if (link >= link_num)
-      return false;
+    if (link >= link_num) return false;
     snk = link_ends[link].snk;
     return true;
   }
 
   inline bool _findSrcSnk(const int link, int &src, int &snk) const {
-    if (!_findSrc(link, src))
-      return false;
+    if (!_findSrc(link, src)) return false;
     _findSnk(link, snk);
     return true;
   }
@@ -136,7 +132,7 @@ private:
   int dijkstra(const int src, const int snk, const vector<int> &caps,
                vector<int> &link_path);
 
-public:
+ public:
   undirected_graph() : vertex_num(0), link_num(0), Q(10) {}
   void clear() {
     vertex_num = link_num = 0;
@@ -165,14 +161,12 @@ public:
   inline int getLink_num(void) const { return link_num; }
 
   inline int getOutDegree(int vertex) const {
-    if (vertex >= vertex_num)
-      return 0;
+    if (vertex >= vertex_num) return 0;
     return outIndex[vertex + 1] - outIndex[vertex];
   }
 
   inline int getInDegree(int vertex) const {
-    if (vertex >= vertex_num)
-      return 0;
+    if (vertex >= vertex_num) return 0;
     return inIndex[vertex + 1] - inIndex[vertex];
   }
 
@@ -259,7 +253,8 @@ public:
    * @return  maxflow  and total cost
    */
   pair<int, int> getMinCostMaxFlow(const int src, const int snk,
-                                   const vector<int> &caps, vector<int> &outs, vector<int> &ins,
+                                   const vector<int> &caps, vector<int> &outs,
+                                   vector<int> &ins,
                                    vector<int> &node_sum_value);
 
   /**
@@ -311,17 +306,16 @@ public:
 };
 
 class Loc_choose {
-
   struct Server_loc {
     int success_bw;
     int total_price;
-    
+
     set<int> locs;
     map<int, int> outBandwidth;
     vector<int> user_in_bandwidth;
-    
+
     map<int, int> reach_node_value;
-    
+
     Server_loc() : success_bw(0), total_price(0) {}
     bool operator<(const Server_loc &other) const {
       if (0 == success_bw) {
@@ -335,7 +329,7 @@ class Loc_choose {
     }
   };
 
-private:
+ private:
   undirected_graph &graph;
 
   int network_node_num;
@@ -365,6 +359,11 @@ private:
   int smallest_user;
   int large_user;
 
+  /**
+   * for every user u there at less a network node in server_candiate_locs[u] used as a server
+   * 
+   */
+
   vector<vector<int>> server_candiate_locs;
 
   vector<int> user_to_network_map;
@@ -373,16 +372,19 @@ private:
 
   set<int> choosedServer;
 
+  vector<int> allChoose;
+
   void initial();
 
-  /** 
+  void initial_candidate_loc();
+  /**
    * @brief forbid all virtual links
-   * 
+   *
    */
   void forbidVirLinks();
-  /** 
+  /**
    * @brief set weight of virtual link to 0
-   * 
+   *
    */
   void releaseVirLinks();
 
@@ -403,6 +405,8 @@ private:
 
   void bestLayoutFlow(Server_loc &server);
 
+  bool domain_intersection_check();
+
   /**
  * choose some vertices as servers then compute min cost max flow, if there sum
  * of
@@ -412,21 +416,29 @@ private:
  * @param server
  * @param recursive is recursive call
  */
-  void update(Server_loc &server, bool recursive=true);
+  void update(Server_loc &server, bool recursive = true);
+
+  
 
   char *output();
   double delete_para;
-public:
+
+ public:
   Loc_choose(undirected_graph &g, int network_n_num, int user_n_num,
              int serice_p, int vir_source, int vir_target, int target_vir_links,
              const vector<int> &node_map, const vector<int> &dcaps,
              const vector<int> &caps)
-      : graph(g), network_node_num(network_n_num), user_node_num(user_n_num),
-        server_price(serice_p), virtual_source(vir_source),
-        virtual_target(vir_target), target_link_start(target_vir_links),
-        network_node_user_map(node_map), user_demand(dcaps),
+      : graph(g),
+        network_node_num(network_n_num),
+        user_node_num(user_n_num),
+        server_price(serice_p),
+        virtual_source(vir_source),
+        virtual_target(vir_target),
+        target_link_start(target_vir_links),
+        network_node_user_map(node_map),
+        user_demand(dcaps),
         orignal_caps(caps) {
-    delete_para=0.5;
+    delete_para = 0.5;
     totCap = 0;
 
     for (vector<int>::const_iterator it = user_demand.begin();
@@ -440,6 +452,7 @@ public:
 
     value_lower = 0;
     user_direct_server.resize(user_node_num, false);
+
     initial();
   }
   char *solve();
