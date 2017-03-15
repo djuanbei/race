@@ -359,6 +359,7 @@ class Loc_choose {
   int smallest_user;
   int large_user;
 
+  int  randTryNum;
   /**
    * for every user u there at less a network node in server_candiate_locs[u] used as a server
    * 
@@ -373,7 +374,13 @@ class Loc_choose {
   set<int> choosedServer;
 
   vector<int> allChoose;
+  
+  double delete_para;
 
+  int saoDong(  ) const{
+    return  rand() % 5 -2;
+  }
+  
   void initial();
 
   void initial_candidate_loc();
@@ -418,10 +425,12 @@ class Loc_choose {
  */
   void update(Server_loc &server, bool recursive = true);
 
-  
+
+  void  delete_canduate( void );
 
   char *output();
-  double delete_para;
+  
+
 
  public:
   Loc_choose(undirected_graph &g, int network_n_num, int user_n_num,
@@ -438,6 +447,8 @@ class Loc_choose {
         network_node_user_map(node_map),
         user_demand(dcaps),
         orignal_caps(caps) {
+
+    randTryNum=100;
     delete_para = 0.5;
     totCap = 0;
 
@@ -450,7 +461,7 @@ class Loc_choose {
 
     value_supper = user_demand.size() * server_price;
 
-    value_lower = 0;
+    value_lower = INF;
     user_direct_server.resize(user_node_num, false);
 
     initial();

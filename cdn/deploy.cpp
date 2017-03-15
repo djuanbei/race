@@ -863,8 +863,11 @@ void Loc_choose::initial() {
     }
   }
 }
+
+
 void Loc_choose::lower_update() {
-  sort(server_candiate.begin(), server_candiate.end());
+  
+
   int cap = 0;
   int temp_value = 0;
   for (size_t i = 0; i < server_candiate.size(); i++) {
@@ -880,9 +883,103 @@ void Loc_choose::lower_update() {
       }
     }
   }
+
+
+  vector<vector<int>> cover_domain(network_node_num);
+
+  for (int user_node = 0; user_node < user_node_num; user_node++) {
+    for (vector<int>::iterator it = server_candiate_locs[user_node].begin();
+         it != server_candiate_locs[user_node].end(); it++) {
+      cover_domain[*it].push_back(user_node);
+    }
+  }
+
+  Fixed_heap Q( network_node_num);
+
+  vector<int> connect_num(network_node_num);
+
+  for (int network_node = 0; network_node < network_node_num; network_node++) {
+    int len = cover_domain[network_node].size();
+    Q.push(make_pair(-len, network_node));
+    connect_num[network_node] = -len;
+  }
+
+  
+  vector<bool> pass(user_node_num, false);
+  int num = user_node_num;
+  
+  int minServerNum =  INF;
+
+  
+  for (int i = 0; i< 10; i++) {
+    
+    num = user_node_num;
+    fill(pass.begin(  ), pass.end(  ), false);
+    
+    Q.clear(  );
+    for (int network_node = 0; network_node < network_node_num;
+         network_node++) {
+      int len = cover_domain[network_node].size() +saoDong(  );
+
+      Q.push(make_pair(-len, network_node));
+      connect_num[network_node] = -len;
+    }
+
+    Server_loc tempS1;
+
+    vector<bool> pass(user_node_num, false);
+    int num = user_node_num;
+
+    while (!Q.empty()) {
+      pair<int,int> p = Q.top();
+      int network_node = p.second;
+      tempS1.locs.insert(network_node);
+
+      Q.pop();
+      vector<int> users = cover_domain[network_node];
+
+      for (vector<int>::iterator it = users.begin(); it != users.end(); it++) {
+        if (!pass[*it]) {
+          pass[*it] = true;
+          num--;
+
+          if (num <= 0) {
+            break;
+          }
+
+          for (vector<int>::iterator nit = server_candiate_locs[*it].begin();
+               nit != server_candiate_locs[*it].end(); nit++) {
+            connect_num[*nit]++;
+            connect_num[*nit] += saoDong(  );
+
+            Q.push(make_pair(connect_num[*nit], *nit));
+          }
+        }
+      }
+    }
+
+    if (minServerNum > tempS1.locs.size()) {
+      minServerNum = tempS1.locs.size();
+    }
+
+    bestLayoutFlow(tempS1);
+
+    update(tempS1, true);
+
+    server_candiate.push_back(tempS1);
+  }
+  
+  
+  if(value_lower> minServerNum * server_price ){
+    value_lower = minServerNum * server_price;    
+  }
+  
 }
 
 void Loc_choose::supper_update() {
+
+  
+  
   for (size_t i = 0; i < server_candiate.size(); i++) {
     if (totCap == server_candiate[i].success_bw) {
       if (value_supper > server_candiate[i].total_price) {
@@ -890,6 +987,8 @@ void Loc_choose::supper_update() {
       }
     }
   }
+
+  
 }
 void Loc_choose::forbidVirLinks() {
   for (int network_node = 0; network_node < network_node_num; network_node++) {
@@ -972,6 +1071,25 @@ void Loc_choose::bestLayoutFlow(Server_loc &server) {
     }
   }
   server.total_price = one_elem.second + server.locs.size() * server_price;
+}
+
+void  Loc_choose::delete_canduate( void ){
+
+  if(server_candiate.size(  )<2  ){
+    return ;
+  }
+  
+  vector<Server_loc> temps;
+  Server_loc last=server_candiate[ 0 ];
+  temps.push_back( last );
+  for( size_t  i=1;i< server_candiate.size(  ); i++ ){
+    if(last.locs!= server_candiate[ i ].locs  ){
+      last=server_candiate[ i ];
+      temps.push_back( last );
+    }
+  }
+  server_candiate=temps;
+  
 }
 
 void Loc_choose::update(Server_loc &server, bool recursive) {
@@ -1111,7 +1229,6 @@ void Loc_choose::initial_candidate_loc() {
 
     vector<pair<int, int>> tree;
     graph.dijkstra_limit_tree(network_node, limit, tree);
-    server_candiate_locs[user_node].clear();
 
     for (vector<pair<int, int>>::iterator it = tree.begin(); it != tree.end();
          it++) {
@@ -1131,9 +1248,10 @@ void Loc_choose::initial_candidate_loc() {
 }
 
 bool Loc_choose::domain_intersection_check() {
+  
   allChoose.clear();
   bool re = true;
-  vector<int> haveCheck;
+
 
   for (int user_node = 0; user_node < user_node_num; user_node++) {
     std::vector<int> union_data;
@@ -1141,45 +1259,153 @@ bool Loc_choose::domain_intersection_check() {
               server_candiate_locs[user_node].end(), allChoose.begin(),
               allChoose.end(), std::back_inserter(union_data));
     if (union_data.size() !=
-        (server_candiate_locs[user_node].size() + haveCheck.size())) {
+        (server_candiate_locs[user_node].size() + allChoose.size())) {
       re = false;
     }
     sort(union_data.begin(), union_data.end());
     allChoose = union_data;
   }
 
-  vector<int> connect_domain(network_node_num);
+  if (re) {
+    return true;
+  }
 
-  for (int i = 0; i < user_node_num; i++) {
-    for (vector<int>::iterator it = server_candiate_locs[i].begin();
-         it != server_candiate_locs[i].end(); it++) {
-      connect_domain[*it]++;
+  vector<vector<int>> cover_domain(network_node_num);
+
+  for (int user_node = 0; user_node < user_node_num; user_node++) {
+    for (vector<int>::iterator it = server_candiate_locs[user_node].begin();
+         it != server_candiate_locs[user_node].end(); it++) {
+      cover_domain[*it].push_back(user_node);
     }
   }
 
-  int num = 0;
-  int left_num = user_node_num;
+  Fixed_heap Q( network_node_num);
 
-  sort(connect_domain.rbegin(), connect_domain.rend());
+  vector<int> connect_num(network_node_num);
 
-  for (int i = 0; i < user_node_num; i++) {
-    num++;
-    left_num -= connect_domain[i];
-    if (left_num <= 0) {
-      break;
+  for (int network_node = 0; network_node < network_node_num; network_node++) {
+    int len = cover_domain[network_node].size();
+    Q.push(make_pair(-len, network_node));
+    connect_num[network_node] = -len;
+  }
+
+  Server_loc tempS;
+
+  vector<bool> pass(user_node_num, false);
+  int num = user_node_num;
+
+  while (!Q.empty()) {
+    pair<int, int> p = Q.top();
+    int network_node = p.second;
+
+
+
+    Q.pop();
+    vector<int> users = cover_domain[network_node];
+
+    for (vector<int>::iterator it = users.begin(); it != users.end(); it++) {
+      if (!pass[*it]) {
+
+        pass[*it] = true;
+        num--;
+
+        tempS.locs.insert(network_node);
+        if (num <= 0) {
+          break;
+        }
+
+        for (vector<int>::iterator nit = server_candiate_locs[*it].begin();
+             nit != server_candiate_locs[*it].end(); nit++) {
+          connect_num[*nit]++;
+          Q.push(make_pair(connect_num[*nit], *nit));
+        }
+      }
     }
   }
 
-  value_lower = num * server_price;
+  int minServerNum = tempS.locs.size();
 
-  return re;
+  bestLayoutFlow(tempS);
+
+  update(tempS, true);
+
+  server_candiate.push_back(tempS);
+
+  for (int i = 0; i < (user_node_num) / 5 + 10; i++) {
+    
+    num = user_node_num;
+    fill(pass.begin(  ), pass.end(  ), false);
+    
+    Q.clear(  );
+    for (int network_node = 0; network_node < network_node_num;
+         network_node++) {
+      int len = cover_domain[network_node].size() +saoDong(  );
+
+      Q.push(make_pair(-len, network_node));
+      connect_num[network_node] = -len;
+    }
+
+    Server_loc tempS1;
+
+    vector<bool> pass(user_node_num, false);
+    int num = user_node_num;
+
+    while (!Q.empty()) {
+      pair<int,int> p = Q.top();
+      int network_node = p.second;
+
+
+      Q.pop();
+      vector<int> users = cover_domain[network_node];
+
+      for (vector<int>::iterator it = users.begin(); it != users.end(); it++) {
+        if (!pass[*it]) {
+
+          pass[*it] = true;
+          num--;
+
+          tempS1.locs.insert(network_node);
+          if (num <= 0) {
+            break;
+          }
+
+          for (vector<int>::iterator nit = server_candiate_locs[*it].begin();
+               nit != server_candiate_locs[*it].end(); nit++) {
+            connect_num[*nit]++;
+            connect_num[*nit] += saoDong(  );
+
+            Q.push(make_pair(connect_num[*nit], *nit));
+          }
+        }
+      }
+    }
+
+    if (minServerNum > tempS1.locs.size()) {
+      minServerNum = tempS1.locs.size();
+    }
+
+    bestLayoutFlow(tempS1);
+
+    update(tempS1, true);
+
+    server_candiate.push_back(tempS1);
+  }
+  
+  if(value_lower> minServerNum * server_price ){
+    value_lower = minServerNum * server_price;    
+  }
+
+
+  return false;
 }
 char *Loc_choose::solve() {
   /**
    *  there is no user node
    *
    */
-
+  value_lower=INF;
+  value_supper=0;
+  
   if (0 == user_node_num) {
     char *topo_file = new char[1024];
     fill(topo_file, topo_file + 1023, 0);
@@ -1241,12 +1467,20 @@ char *Loc_choose::solve() {
     value_lower = 2 * server_price;
   }
 
-  for (int k = 0; k < 100; k++) {
+  for (int k = 0; k < user_node_num/10+5; k++) {
+
+    sort(server_candiate.begin(), server_candiate.end());
+
+    delete_canduate(  );
+    
     lower_update();
+    
     supper_update();
+    
     if ((value_supper / server_price) == (value_lower / server_price)) {
       return output();
     }
+    
   }
 
   return output();
