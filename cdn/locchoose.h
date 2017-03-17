@@ -87,7 +87,7 @@ class Loc_choose {
   
   double delete_para;
 
-  int saoDong(  ) const{
+  int raoDong(  ) const{
     return  rand() % 5 -2;
   }
   

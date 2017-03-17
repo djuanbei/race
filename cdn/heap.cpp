@@ -38,8 +38,15 @@ void Fixed_heap::push(pair<int, int> k) {
     percolateUp(size);
     size++;
   } else {
-    heap[indices[k.second]].first = k.first;
-    percolateUp(indices[k.second]);
+    
+    if(heap[indices[k.second]].first> k.first  ){
+      heap[indices[k.second]].first = k.first;
+      percolateUp(indices[k.second]);
+    }else if( heap[indices[k.second]].first < k.first  ){
+      heap[indices[k.second]].first = k.first;
+      percolateDown(indices[k.second]);
+    }
+    
   }
 }
 

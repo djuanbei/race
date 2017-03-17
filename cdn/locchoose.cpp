@@ -3,11 +3,23 @@
 
 #include<algorithm>
 
+#include <sys/resource.h>
+#include <sys/time.h>
+#include <time.h>
+#include <unistd.h>
+
 #include "locchoose.h"
 
 
 namespace raptor {
 using namespace std;
+
+static inline double systemTime(void) {
+  struct timespec start;
+  clock_gettime(CLOCK_MONOTONIC, &start);
+
+  return start.tv_sec + start.tv_nsec / 1000000000.0;
+}
 
 
 void Loc_choose::initial() {
@@ -130,7 +142,7 @@ void Loc_choose::lower_update() {
     Q.clear(  );
     for (int network_node = 0; network_node < network_node_num;
          network_node++) {
-      int len = cover_domain[network_node].size() +saoDong(  );
+      int len = cover_domain[network_node].size() +raoDong(  );
 
       Q.push(make_pair(-len, network_node));
       connect_num[network_node] = -len;
@@ -161,7 +173,7 @@ void Loc_choose::lower_update() {
           for (vector<int>::iterator nit = server_candiate_locs[*it].begin();
                nit != server_candiate_locs[*it].end(); nit++) {
             connect_num[*nit]++;
-            connect_num[*nit] += saoDong(  );
+            connect_num[*nit] += raoDong(  );
 
             Q.push(make_pair(connect_num[*nit], *nit));
           }
@@ -242,6 +254,7 @@ bool Loc_choose::smallestUer() {
   return false;
 }
 void Loc_choose::tryKServer(const int k) {}
+
 
 void Loc_choose::bestLayoutFlow(Server_loc &server) {
   server.locs.insert(choosedServer.begin(), choosedServer.end());
@@ -509,8 +522,6 @@ bool Loc_choose::domain_intersection_check() {
     pair<int, int> p = Q.top();
     int network_node = p.second;
 
-
-
     Q.pop();
     vector<int> users = cover_domain[network_node];
 
@@ -550,7 +561,7 @@ bool Loc_choose::domain_intersection_check() {
     Q.clear(  );
     for (int network_node = 0; network_node < network_node_num;
          network_node++) {
-      int len = cover_domain[network_node].size() +saoDong(  );
+      int len = cover_domain[network_node].size() +raoDong(  );
 
       Q.push(make_pair(-len, network_node));
       connect_num[network_node] = -len;
@@ -583,7 +594,7 @@ bool Loc_choose::domain_intersection_check() {
           for (vector<int>::iterator nit = server_candiate_locs[*it].begin();
                nit != server_candiate_locs[*it].end(); nit++) {
             connect_num[*nit]++;
-            connect_num[*nit] += saoDong(  );
+            connect_num[*nit] += raoDong(  );
 
             Q.push(make_pair(connect_num[*nit], *nit));
           }

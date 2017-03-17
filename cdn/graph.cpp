@@ -250,61 +250,6 @@ void undirected_graph::getMinVertexCover(vector<int> &nodes) {
   }
 }
 
-bool undirected_graph::compute_shortest_path_dijkstra(const int src,
-                                                      const int snk,
-
-                                                      vector<int> &path) {
-  path.clear();
-  if (src >= vertex_num || snk >= vertex_num) {
-    return false;
-  }
-
-  if (src == snk) {
-    return true;
-  }
-
-  size_t j, outDegree, link, next;
-  int current;
-  int weight;
-  vector<int> dis(vertex_num, INF);
-  vector<int> preLink(vertex_num, link_num + 1);
-  vector<int> parent(vertex_num, -1);
-  dis[src] = 0;
-  Fixed_heap Q(vertex_num);
-
-  Q.push(make_pair(0, src));
-
-  while (!Q.empty()) {
-    PII p = Q.top();
-    current = p.second;
-    if (current == snk) {
-      while (current != src) {
-        path.push_back(in2outLink_map[preLink[current]] / 2);
-
-        current = _srcs[preLink[current]];
-      }
-      reverse(path.begin(), path.end());
-      return true;
-    }
-    Q.pop();
-
-    outDegree = getOutDegree(current);
-    int current_weight = p.first;
-    for (j = 0; j < outDegree; j++) {
-      link = outIndex[current] + j;
-      const endElement &neighbour = link_ends[link];
-      weight = current_weight + neighbour.weight;
-      next = neighbour.snk;
-      if (weight < dis[snk] && weight < dis[next]) {
-        parent[next] = current;
-        preLink[next] = link;
-        dis[next] = weight;
-        Q.push(make_pair(weight, next));
-      }
-    }
-  }
-  return false;
-}
 
 bool undirected_graph::bicompute_shortest_path_dijkstra(const int src,
                                                         const int snk,
@@ -405,14 +350,8 @@ bool undirected_graph::bicompute_shortest_path_dijkstra(const int src,
         best_current = temp;
       }
     }
-    num = bQ.len();
-    for (int i = 0; i < num; i++) {
-      temp = bQ[i].second;
-      temp_dis = dis[temp] + bdis[temp];
-      if (temp_dis < best_dis) {
-        best_dis = temp_dis;
-        best_current = temp;
-      }
+    if (best_dis >= INF) {
+      return false;
     }
 
     current = best_current;

@@ -169,19 +169,6 @@ class undirected_graph {
    */
   void getMinVertexCover(vector<int> &nodes);
 
-  /**
-   *@brief compute shortest path which connect src and snk
-   *
-   * @param src source vertex id
-   * @param snk target vertex id
-   * @param path __return__ link path
-   *
-   * @return true if find a path, false otherwise
-   */
-
-  bool compute_shortest_path_dijkstra(const int src, const int snk,
-
-                                      vector<int> &path);
 
   /**
    *@brief compute a shortest path which connect src and snk by bidirection
