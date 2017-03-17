@@ -1,3 +1,3 @@
-/Users/daixiaobei/race/build/CMakeFiles/rebuild_cache.dir
-/Users/daixiaobei/race/build/CMakeFiles/edit_cache.dir
-/Users/daixiaobei/race/build/CMakeFiles/cdn.dir
+/home/lyun/demo/race/build/CMakeFiles/edit_cache.dir
+/home/lyun/demo/race/build/CMakeFiles/rebuild_cache.dir
+/home/lyun/demo/race/build/CMakeFiles/cdn.dir

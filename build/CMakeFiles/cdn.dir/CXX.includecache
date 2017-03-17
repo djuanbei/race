@@ -1,4 +1,4 @@
-#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+#IncludeRegexLine: ^[ 	]*#[ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
 
 #IncludeRegexScan: ^.*$
 
@@ -6,35 +6,35 @@
 
 #IncludeRegexTransform: 
 
-/Users/daixiaobei/race/cdn/cdn.cpp
+/home/lyun/demo/race/cdn/cdn.cpp
 deploy.h
-/Users/daixiaobei/race/cdn/deploy.h
+/home/lyun/demo/race/cdn/deploy.h
 lib_io.h
-/Users/daixiaobei/race/cdn/lib_io.h
+/home/lyun/demo/race/cdn/lib_io.h
 lib_time.h
-/Users/daixiaobei/race/cdn/lib_time.h
+/home/lyun/demo/race/cdn/lib_time.h
 stdio.h
-/Users/daixiaobei/race/cdn/stdio.h
+/home/lyun/demo/race/cdn/stdio.h
 
-/Users/daixiaobei/race/cdn/deploy.cpp
+/home/lyun/demo/race/cdn/deploy.cpp
 deploy.h
-/Users/daixiaobei/race/cdn/deploy.h
-lib_io.h
-/Users/daixiaobei/race/cdn/lib_io.h
-lib_time.h
-/Users/daixiaobei/race/cdn/lib_time.h
-vector
+/home/lyun/demo/race/cdn/deploy.h
+stdio.h
 -
 stdlib.h
 -
-stdio.h
--
 string.h
 -
-
-/Users/daixiaobei/race/cdn/deploy.h
+vector
+-
 lib_io.h
-/Users/daixiaobei/race/cdn/lib_io.h
+/home/lyun/demo/race/cdn/lib_io.h
+lib_time.h
+/home/lyun/demo/race/cdn/lib_time.h
+
+/home/lyun/demo/race/cdn/deploy.h
+lib_io.h
+/home/lyun/demo/race/cdn/lib_io.h
 algorithm
 -
 cassert
@@ -53,8 +53,10 @@ set
 -
 vector
 -
+utility
+-
 
-/Users/daixiaobei/race/cdn/io.cpp
+/home/lyun/demo/race/cdn/io.cpp
 stdio.h
 -
 stdlib.h
@@ -74,7 +76,7 @@ unistd.h
 signal.h
 -
 
-/Users/daixiaobei/race/cdn/lib/lib_io.h
+/home/lyun/demo/race/cdn/lib/lib_io.h
 
-/Users/daixiaobei/race/cdn/lib/lib_time.h
+/home/lyun/demo/race/cdn/lib/lib_time.h
 

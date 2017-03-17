@@ -1,9 +1,9 @@
 file(REMOVE_RECURSE
-  "CMakeFiles/cdn.dir/cdn.cpp.o"
-  "CMakeFiles/cdn.dir/deploy.cpp.o"
   "CMakeFiles/cdn.dir/io.cpp.o"
-  "/Users/daixiaobei/race/bin/cdn.pdb"
-  "/Users/daixiaobei/race/bin/cdn"
+  "CMakeFiles/cdn.dir/deploy.cpp.o"
+  "CMakeFiles/cdn.dir/cdn.cpp.o"
+  "/home/lyun/demo/race/bin/cdn.pdb"
+  "/home/lyun/demo/race/bin/cdn"
 )
 
 # Per-language clean rules from dependency scanning.

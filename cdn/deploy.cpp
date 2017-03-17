@@ -1409,7 +1409,7 @@ char *Loc_choose::solve() {
   if (0 == user_node_num) {
     char *topo_file = new char[1024];
     fill(topo_file, topo_file + 1023, 0);
-    sprintf(topo_file, "0\n\n");
+    sprintf(topo_file, "NA");
     return topo_file;
   }
 
