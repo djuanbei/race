@@ -6,6 +6,7 @@
 #include <limits>
 #include<set>
 #include<map>
+#include<cstdlib>
 #include "graph.h"
 
 namespace raptor {
