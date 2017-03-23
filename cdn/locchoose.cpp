@@ -11,13 +11,18 @@
 #include "locchoose.h"
 
 
+#ifndef CLOCK_MONOTONIC
+#define CLOCK_MONOTONIC 1
+#endif
+
 namespace raptor {
 using namespace std;
 
 static inline double systemTime(void) {
   struct timespec start;
+#ifndef __MACH__
   clock_gettime(CLOCK_MONOTONIC, &start);
-
+#endif
   return start.tv_sec + start.tv_nsec / 1000000000.0;
 }
 
@@ -44,7 +49,8 @@ void Loc_choose::initial() {
        *
        */
 
-      if (sumBw < 2 * user_demand[user_node]) {
+      if (sumBw < 2 * user_demand[user_node] ) {
+        
         user_direct_server[user_node] = true;
         choosedServer.insert(network_node);
         tempC -= user_demand[user_node];
@@ -55,22 +61,21 @@ void Loc_choose::initial() {
   }
 
   sort(demandC.rbegin(), demandC.rend());
-  for (vector<pair<int, int>>::iterator it = demandC.begin();
-       it != demandC.end(); it++) {
+  for(size_t i=0; i+1< demandC.size(); i++){
     /**
      *  when one user demand greater or equal then sum of all
      * other users demand then this user direct connect node must be
      * a server
      *
      */
-    int user_node = it->second;
+    int user_node =demandC[i].second;// it->second;
     int network_node = user_to_network_map[user_node];
 
     if (!user_direct_server[user_node]) {
-      if (2 * (it->first) >= tempC) {
+      if (2 * (demandC[i].first) >= tempC) {
         user_direct_server[user_node] = true;
         choosedServer.insert(network_node);
-        tempC -= it->first;
+        tempC -= demandC[i].first;
       }
     }
   }
@@ -448,8 +453,10 @@ void Loc_choose::initial_candidate_loc() {
       server_candiate_locs[user_node].push_back(network_node);
       continue;
     }
-
-    int limit = server_price / user_demand[user_node];
+    int limit=0;
+    if(0!=user_demand[user_node]){
+      limit = server_price / user_demand[user_node];
+    }
 
     vector<pair<int, int>> tree;
     graph.dijkstra_limit_tree(network_node, limit, tree);
