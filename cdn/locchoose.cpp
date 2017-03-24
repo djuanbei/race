@@ -76,6 +76,8 @@ void Loc_choose::initial() {
         user_direct_server[user_node] = true;
         choosedServer.insert(network_node);
         tempC -= demandC[i].first;
+      }else{
+        break;
       }
     }
   }
@@ -322,6 +324,18 @@ void  Loc_choose::delete_canduate( void ){
 }
 
 void Loc_choose::update(Server_loc &server, bool recursive) {
+
+  while(server.success_bw< totCap){
+
+    int rnetwork_node=rand()%network_node_num;
+    while(server.locs.find(rnetwork_node)!=server.locs.end()){
+      rnetwork_node=rand()%network_node_num;
+    }
+    server.locs.insert(rnetwork_node);
+    bestLayoutFlow(server);
+  }
+
+  
   while (true) {
     int large_loc = -1;
     int large_value = -1;
