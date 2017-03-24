@@ -11,10 +11,6 @@
 #include "locchoose.h"
 
 
-#ifndef CLOCK_MONOTONIC
-#define CLOCK_MONOTONIC 1
-#endif
-
 namespace raptor {
 using namespace std;
 
@@ -207,8 +203,6 @@ void Loc_choose::lower_update() {
 }
 
 void Loc_choose::supper_update() {
-
-  
   
   for (size_t i = 0; i < server_candiate.size(); i++) {
     if (totCap == server_candiate[i].success_bw) {
@@ -217,7 +211,6 @@ void Loc_choose::supper_update() {
       }
     }
   }
-
   
 }
 void Loc_choose::forbidVirLinks() {
