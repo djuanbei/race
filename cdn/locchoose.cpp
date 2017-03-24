@@ -222,6 +222,7 @@ void Loc_choose::forbidVirLinks() {
     graph.setWeight(link, INF);
   }
 }
+
 void Loc_choose::releaseVirLinks() {
   for (int network_node = 0; network_node < network_node_num; network_node++) {
     graph.setWeight(2 * network_node, 0);
@@ -363,7 +364,7 @@ void Loc_choose::update(Server_loc &server, bool recursive) {
         }
       }
 
-      if (small < smallest_user * delete_para) {
+      if (small <= smallest_user * delete_para) {
         Server_loc tempS = server;
         tempS.locs.erase(smallNode);
         bestLayoutFlow(tempS);
@@ -405,6 +406,12 @@ char *Loc_choose::output() {
         best_value = server_candiate[i].total_price;
       }
     }
+  }
+  if(best_loc>-1 && server_candiate[best_loc].locs.empty()){
+    char *topo_file = new char[1024];
+    fill(topo_file, topo_file + 1023, 0);
+    sprintf(topo_file, "NA");
+    return topo_file;
   }
   vector<int> caps = orignal_caps;
   for (set<int>::iterator it = server_candiate[best_loc].locs.begin();
@@ -661,7 +668,7 @@ char *Loc_choose::solve() {
   }
 
   bestLayoutFlow(tempS);
-
+  update(tempS, true);
   server_candiate.push_back(tempS);
 
   if (domain_intersection_check()) {
