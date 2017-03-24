@@ -153,7 +153,7 @@ void Loc_choose::lower_update() {
 
     Server_loc tempS1;
 
-    vector<bool> pass(user_node_num, false);
+    // vector<bool> pass(user_node_num, false);
     int num = user_node_num;
 
     while (!Q.empty()) {
