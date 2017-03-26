@@ -11,10 +11,13 @@
 
 namespace raptor {
 
+    
 using namespace std;
 
 
+double systemTime(void);
 
+const static int time_bound=90;
 
 class Loc_choose {
   struct Server_loc {
@@ -143,7 +146,7 @@ class Loc_choose {
 
   char *output();
   
-
+  double start_time;
 
  public:
   Loc_choose(undirected_graph &g, int network_n_num, int user_n_num,
@@ -160,7 +163,7 @@ class Loc_choose {
         network_node_user_map(node_map),
         user_demand(dcaps),
         orignal_caps(caps) {
-
+    start_time=systemTime();
     randTryNum=100;
     delete_para = 0.5;
     totCap = 0;
