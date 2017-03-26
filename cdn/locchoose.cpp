@@ -789,12 +789,12 @@ char *Loc_choose::solve() {
   int last_best_value=-1;
   for (int k = 0; k < user_node_num+5; k++) {
     std::cout << "time(s): "<<systemTime()-start_time<<" value: "<<value_supper << std::endl;
-    // if(systemTime()-start_time> time_bound-10){
-    //   break;
-    // }
-    if(systemTime()-start_time> 300){
+    if(systemTime()-start_time> time_bound-10){
       break;
     }
+    // if(systemTime()-start_time> 300){
+    //   break;
+    // }
     if(value_supper==last_best_value){
       steable_time++;
       first_class_candiate_num--;
