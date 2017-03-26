@@ -362,7 +362,7 @@ void  Loc_choose::delete_canduate( void ){
       
     tempS.locs.insert(tempLoc.begin(), tempLoc.begin()+outLen);
     bestLayoutFlow(tempS);
-    // update(tempS, false);
+    update(tempS, false);
     server_candiate.push_back(tempS);
   
 }
@@ -385,7 +385,11 @@ void  Loc_choose::randdom_generate(void){
   sort(server_candiate.begin(), server_candiate.end());
     
   int secondLen=server_candiate.size();
-    
+  if(secondLen>0){
+      secondLen--;
+  }
+
+  
   for(size_t i=0; i< firstLen; i++){
 
     int rid = firstLen + (rand() % (int)(secondLen - firstLen + 1));
@@ -786,6 +790,9 @@ char *Loc_choose::solve() {
     // if(systemTime()-start_time> time_bound-10){
     //   break;
     // }
+    if(systemTime()-start_time> 300){
+      break;
+    }
     if(value_supper==last_best_value){
       steable_time++;
     }else{
