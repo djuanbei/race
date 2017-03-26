@@ -85,6 +85,8 @@ class Loc_choose {
   set<int> choosedServer;
 
   vector<int> allChoose;
+  vector< vector<float> >   network_to_user_inv_distance;
+    
   
   double delete_para;
 
@@ -174,6 +176,10 @@ class Loc_choose {
 
     value_lower = INF;
     user_direct_server.resize(user_node_num, false);
+    network_to_user_inv_distance.resize(network_node_num);
+    for(int i=0; i< network_node_num; i++){
+        network_to_user_inv_distance[i].resize(user_node_num,  0.0f);
+    }
 
     initial();
   }

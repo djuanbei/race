@@ -1,23 +1,26 @@
 # The set of languages for which implicit dependencies are needed:
-set(CMAKE_DEPENDS_LANGUAGES
+SET(CMAKE_DEPENDS_LANGUAGES
   "CXX"
   )
 # The set of files for implicit dependencies of each language:
-set(CMAKE_DEPENDS_CHECK_CXX
-  "/home/lyun/demo/race/cdn/cdn.cpp" "/home/lyun/demo/race/build/CMakeFiles/cdn.dir/cdn.cpp.o"
-  "/home/lyun/demo/race/cdn/deploy.cpp" "/home/lyun/demo/race/build/CMakeFiles/cdn.dir/deploy.cpp.o"
-  "/home/lyun/demo/race/cdn/io.cpp" "/home/lyun/demo/race/build/CMakeFiles/cdn.dir/io.cpp.o"
+SET(CMAKE_DEPENDS_CHECK_CXX
+  "/home/lyc/race/cdn/cdn.cpp" "/home/lyc/race/build/CMakeFiles/cdn.dir/cdn.cpp.o"
+  "/home/lyc/race/cdn/deploy.cpp" "/home/lyc/race/build/CMakeFiles/cdn.dir/deploy.cpp.o"
+  "/home/lyc/race/cdn/graph.cpp" "/home/lyc/race/build/CMakeFiles/cdn.dir/graph.cpp.o"
+  "/home/lyc/race/cdn/heap.cpp" "/home/lyc/race/build/CMakeFiles/cdn.dir/heap.cpp.o"
+  "/home/lyc/race/cdn/io.cpp" "/home/lyc/race/build/CMakeFiles/cdn.dir/io.cpp.o"
+  "/home/lyc/race/cdn/locchoose.cpp" "/home/lyc/race/build/CMakeFiles/cdn.dir/locchoose.cpp.o"
   )
-set(CMAKE_CXX_COMPILER_ID "GNU")
-
-# The include file search paths:
-set(CMAKE_CXX_TARGET_INCLUDE_PATH
-  "/home/lyun/demo/race/cdn/lib"
-  )
+SET(CMAKE_CXX_COMPILER_ID "GNU")
 
 # Targets to which this target links.
-set(CMAKE_TARGET_LINKED_INFO_FILES
+SET(CMAKE_TARGET_LINKED_INFO_FILES
   )
 
-# Fortran module output directory.
-set(CMAKE_Fortran_TARGET_MODULE_DIR "")
+# The include file search paths:
+SET(CMAKE_C_TARGET_INCLUDE_PATH
+  "/home/lyc/race/cdn/lib"
+  )
+SET(CMAKE_CXX_TARGET_INCLUDE_PATH ${CMAKE_C_TARGET_INCLUDE_PATH})
+SET(CMAKE_Fortran_TARGET_INCLUDE_PATH ${CMAKE_C_TARGET_INCLUDE_PATH})
+SET(CMAKE_ASM_TARGET_INCLUDE_PATH ${CMAKE_C_TARGET_INCLUDE_PATH})

@@ -1,4 +1,6 @@
 
+#include<iostream>
+
 #include<string.h>
 
 #include<algorithm>
@@ -88,6 +90,18 @@ void Loc_choose::initial() {
       large_user = user_demand[user_node];
     }
   }
+
+  
+  forbidVirLinks();
+  for(int network_node=0; network_node< network_node_num; network_node++){
+      vector<int> dis; 
+      graph.dijkstra_tree(network_node, dis);
+      for(int user_node=0; user_node< user_node_num; user_node++){
+          int temp=user_to_network_map[user_node];
+          network_to_user_inv_distance[network_node][user_node]=1.0/(dis[temp]+1); 
+      }
+  }
+  releaseVirLinks();
 }
 
 
@@ -233,6 +247,7 @@ void Loc_choose::releaseVirLinks() {
   }
 }
 
+    
 bool Loc_choose::smallestUer() {
   if (2 + choosedServer.size() >= user_node_num) {
     Server_loc tempS;
@@ -320,32 +335,56 @@ void  Loc_choose::delete_canduate( void ){
 void Loc_choose::update(Server_loc &server, bool recursive) {
 
   while(server.success_bw< totCap){
-
-    int rnetwork_node=rand()%network_node_num;
-    while(server.locs.find(rnetwork_node)!=server.locs.end()){
-      rnetwork_node=rand()%network_node_num;
+    double left=totCap-server.success_bw;
+    int es_add_num=((left/(totCap-server.success_bw+0.1))*server.locs.size())/5+1;
+  
+    vector<pair<double, int> > candiateN;
+        
+    vector<int> leftBandwidth(user_node_num, 0);
+    for(int user_node=0; user_node< user_node_num;  user_node++){
+      leftBandwidth[user_node]=user_demand[user_node]-server.user_in_bandwidth[user_node];
     }
-    server.locs.insert(rnetwork_node);
-    bestLayoutFlow(server);
-  }
 
+    for(int network_node=0; network_node< network_node_num; network_node++){
+      if(server.locs.find(network_node)==server.locs.end()){
+        float temp_value=0;
+        for(int user_node=0; user_node< user_node_num; user_node++){
+          temp_value+=leftBandwidth[user_node]*network_to_user_inv_distance[network_node][user_node];
+        }
+        candiateN.push_back(make_pair(temp_value, network_node));
+      }
+    }
+    
+    sort(candiateN.rbegin(), candiateN.rend());
+    for(size_t i=0; i< candiateN.size() && i< es_add_num; i++){
+      server.locs.insert(candiateN[i].second);      
+    }
+    
+    bestLayoutFlow(server);
+    
+  }
+  
   
   while (true) {
-    int large_loc = -1;
-    int large_value = -1;
 
+    vector<pair<int, int> > candiateN;
     for (map<int, int>::iterator it = server.reach_node_value.begin();
          it != server.reach_node_value.end(); it++) {
-      if (it->first > large_value) {
-        large_value = it->first;
-        large_loc = it->second;
+      if ( it->second >=server_price) {
+        candiateN.push_back(make_pair(it->second, it->first));
       }
     }
 
-    if (large_value >= server_price) {
-      server.locs.insert(large_loc);
+    if(!candiateN.empty()){
+      sort(candiateN.rbegin(), candiateN.rend());
+      int addN=candiateN.size()/5+1;
+      for(size_t i=0; i< addN && i< candiateN.size(); i++){
+        server.locs.insert(candiateN[i].second);
+      }
+
       bestLayoutFlow(server);
-    } else {
+
+    }else{
       break;
     }
   }
@@ -388,6 +427,7 @@ void Loc_choose::update(Server_loc &server, bool recursive) {
       }
     }
   }
+
 }
 
 /**
@@ -649,7 +689,7 @@ char *Loc_choose::solve() {
   value_lower=INF;
   value_supper=0;
   
-  if (0 == user_node_num) {
+  if ((0 == user_node_num)|| (0==totCap) ) {
     char *topo_file = new char[1024];
     fill(topo_file, topo_file + 1023, 0);
     sprintf(topo_file, "NA");
@@ -670,6 +710,9 @@ char *Loc_choose::solve() {
   bestLayoutFlow(tempS);
   update(tempS, true);
   server_candiate.push_back(tempS);
+  if(0==server_price){
+    return output();
+  }
 
   if (domain_intersection_check()) {
     return output();
@@ -710,7 +753,7 @@ char *Loc_choose::solve() {
     value_lower = 2 * server_price;
   }
 
-  for (int k = 0; k < user_node_num/10+5; k++) {
+  for (int k = 0; k < user_node_num/20+5; k++) {
 
     sort(server_candiate.begin(), server_candiate.end());
 

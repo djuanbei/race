@@ -1,3 +1,1 @@
-/home/lyun/demo/race/build/CMakeFiles/edit_cache.dir
-/home/lyun/demo/race/build/CMakeFiles/rebuild_cache.dir
-/home/lyun/demo/race/build/CMakeFiles/cdn.dir
+/home/lyc/race/build/CMakeFiles/cdn.dir

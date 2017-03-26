@@ -151,6 +151,10 @@ class undirected_graph {
     return in2outLink_map[link_starts[inIndex[v] + i].link];
   }
 
+
+   
+  void dijkstra_tree(const int src, vector<int> &dis);
+    
   /**
    *
    * compute shortest path tree which distance less or equal than limit

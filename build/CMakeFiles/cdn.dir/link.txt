@@ -1,1 +1,1 @@
-/usr/bin/c++    -O3 -Wall -std=c++11   CMakeFiles/cdn.dir/io.cpp.o CMakeFiles/cdn.dir/deploy.cpp.o CMakeFiles/cdn.dir/cdn.cpp.o  -o /home/lyun/demo/race/bin/cdn -rdynamic 
+/usr/bin/c++    -O3 -Wall -std=c++11    CMakeFiles/cdn.dir/io.cpp.o CMakeFiles/cdn.dir/cdn.cpp.o CMakeFiles/cdn.dir/graph.cpp.o CMakeFiles/cdn.dir/deploy.cpp.o CMakeFiles/cdn.dir/locchoose.cpp.o CMakeFiles/cdn.dir/heap.cpp.o  -o /home/lyc/race/bin/cdn -rdynamic 

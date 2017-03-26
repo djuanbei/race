@@ -168,9 +168,53 @@ bool undirected_graph::findRhs(const int link, const int lhs, int &rhs) const {
   return false;
 }
 
+
+    
+void undirected_graph::dijkstra_tree(const int src, 
+                                               vector<int> &dis) {
+
+  size_t j, outDegree, link, next;
+  int current;
+  int weight;
+  dis.resize(vertex_num);
+  fill(dis.begin(), dis.end(), INF);
+  vector<int> preLink(vertex_num, link_num + 1);
+  vector<int> parent(vertex_num, -1);
+  dis[src] = 0;
+  Fixed_heap Q(vertex_num);
+
+  Q.push(make_pair(0, src));
+
+  while (!Q.empty()) {
+    PII p = Q.top();
+    current = p.second;
+
+    Q.pop();
+
+    outDegree = getOutDegree(current);
+    int current_weight = p.first;
+    for (j = 0; j < outDegree; j++) {
+      link = outIndex[current] + j;
+      const endElement &neighbour = link_ends[link];
+      weight = current_weight + neighbour.weight;
+      next = neighbour.snk;
+      if ( weight < dis[next]) {
+        parent[next] = current;
+        preLink[next] = link;
+        dis[next] = weight;
+        Q.push(make_pair(weight, next));
+      }
+    }
+  }
+
+}
+
 void undirected_graph::dijkstra_limit_tree(const int src, const int limit,
                                            vector<pair<int, int>> &tree) {
   tree.clear();
+  if(0==limit){
+      return;
+  }
 
   size_t j, outDegree, link, next;
   int current;
@@ -507,7 +551,7 @@ pair<int, int> undirected_graph::getMinCostMaxFlow(
     const int src, const int snk, const vector<int> &ecaps, vector<int> &outs,
     vector<int> &ins, vector<int> &node_sum_value) {
   assert(link_num == 2 * ecaps.size());
-  fill(dist.end(), dist.end(), INF);
+  fill(dist.begin(), dist.end(), INF);
   fill(width.begin(), width.end(), 0);
   fill(flow.begin(), flow.end(), 0);
   outs.resize(vertex_num, 0);
