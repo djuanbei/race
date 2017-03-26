@@ -93,8 +93,10 @@ class Loc_choose {
   
   double delete_para;
 
+  int max_candiate_num;
+
   int raoDong(  ) const{
-    return  rand() % 5 -2;
+    return  rand() % 3 -1;
   }
   
   void initial();
@@ -141,8 +143,13 @@ class Loc_choose {
  */
   void update(Server_loc &server, bool recursive = true);
 
+  void initial_case(void);
 
   void  delete_canduate( void );
+    
+  void  generate_case( Server_loc& lhs, Server_loc &rhs);
+    
+  void  randdom_generate(void);
 
   char *output();
   
@@ -167,7 +174,8 @@ class Loc_choose {
     randTryNum=100;
     delete_para = 0.5;
     totCap = 0;
-
+    max_candiate_num=30;
+    
     for (vector<int>::const_iterator it = user_demand.begin();
          it != user_demand.end(); it++) {
       totCap += *it;
