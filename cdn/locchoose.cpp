@@ -336,7 +336,7 @@ void Loc_choose::update(Server_loc &server, bool recursive) {
 
   while(server.success_bw< totCap){
     double left=totCap-server.success_bw;
-    int es_add_num=((left/(totCap-server.success_bw+0.1))*server.locs.size())/5+1;
+    int es_add_num=((left/(totCap-server.success_bw+0.1))*server.locs.size())/2+1;
   
     vector<pair<double, int> > candiateN;
         
@@ -377,7 +377,7 @@ void Loc_choose::update(Server_loc &server, bool recursive) {
 
     if(!candiateN.empty()){
       sort(candiateN.rbegin(), candiateN.rend());
-      int addN=candiateN.size()/5+1;
+      int addN=candiateN.size()/2+1;
       for(size_t i=0; i< addN && i< candiateN.size(); i++){
         server.locs.insert(candiateN[i].second);
       }
@@ -390,41 +390,50 @@ void Loc_choose::update(Server_loc &server, bool recursive) {
   }
 
   if (recursive) {
-    bool state = true;
+    bool state=true;
+
     while (state) {
-      state = false;
-      int small = INF;
-      int smallNode = -1;
+      
+      state=false;
+      vector<pair<int, int> > candiateN;
       for (map<int, int>::iterator it = server.outBandwidth.begin();
            it != server.outBandwidth.end(); it++) {
-        if (it->second < small) {
-          small = it->second;
-          smallNode = it->first;
+        if (it->second  <= smallest_user * delete_para) {
+          candiateN.push_back(make_pair(it->second, it->first ));
         }
       }
-
-      if (small <= smallest_user * delete_para) {
+      
+      if(!candiateN.empty()){
+        
+        sort(candiateN.begin(), candiateN.end());
+        
+        int deleteN=candiateN.size()/2+1;
+        
         Server_loc tempS = server;
-        tempS.locs.erase(smallNode);
-        bestLayoutFlow(tempS);
-        update(tempS, false);
+        
+        for(size_t i=0; i< deleteN && i< candiateN.size(); i++){
+          tempS.locs.erase(candiateN[i].second);
+          bestLayoutFlow(tempS);
+          update(tempS, false);
 
-        if (tempS.success_bw > server.success_bw) {
-          if (tempS.total_price <= server.total_price) {
-            server = tempS;
-            state = true;
-          } else {
-            server_candiate.push_back(tempS);
+          if (tempS.success_bw > server.success_bw) {
+            if (tempS.total_price <= server.total_price) {
+              server = tempS;
+              state = true;
+            } else {
+              server_candiate.push_back(tempS);
+            }
           }
-        }
 
-        if (tempS.success_bw == server.success_bw) {
-          if (tempS.total_price < server.total_price) {
-            server = tempS;
-            state = true;
-          }
+          if (tempS.success_bw == server.success_bw) {
+            if (tempS.total_price < server.total_price) {
+              server = tempS;
+              state = true;
+            }
+          } 
         }
       }
+
     }
   }
 
