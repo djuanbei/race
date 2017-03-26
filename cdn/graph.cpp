@@ -423,17 +423,17 @@ int undirected_graph::dijkstra(const int src, const int snk,
 }
 
 pair<int, int> undirected_graph::getMinCostMaxFlow(
-    const int src, const int snk, const vector<int> &ecaps, vector<int> &outs,
-    vector<int> &ins, vector<int> &node_sum_value) {
+    const int src, const int snk, const vector<int> &ecaps, vector<int> &outputs,
+    vector<int> &inputs, vector<int> &node_sum_value) {
   assert(link_num == 2 * ecaps.size());
   fill(dist.begin(), dist.end(), INF);
   fill(width.begin(), width.end(), 0);
   fill(flow.begin(), flow.end(), 0);
-  outs.resize(vertex_num, 0);
-  fill(outs.begin(), outs.end(), 0);
+  outputs.resize(vertex_num, 0);
+  fill(outputs.begin(), outputs.end(), 0);
 
-  ins.resize(vertex_num, 0);
-  fill(ins.begin(), ins.end(), 0);
+  inputs.resize(vertex_num, 0);
+  fill(inputs.begin(), inputs.end(), 0);
 
   node_sum_value.resize(vertex_num, 0);
   fill(node_sum_value.begin(), node_sum_value.end(), 0);
@@ -470,10 +470,10 @@ pair<int, int> undirected_graph::getMinCostMaxFlow(
     int value = 0;
     int firstLink = path.front();
 
-    outs[link_ends[firstLink].snk] += amt;
+    outputs[link_ends[firstLink].snk] += amt;
 
     int lastLink = path.back();
-    ins[_srcs[lastLink]] += amt;
+    inputs[_srcs[lastLink]] += amt;
 
     for (vector<int>::iterator it = path.begin(); it != path.end(); it++) {
       int link = *it;
