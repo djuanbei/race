@@ -130,7 +130,7 @@ void Loc_choose::initial_case(void){
   
   int minServerNum =  INF;
   
-  for (int i = 0; i< 30; i++) {
+  for (int i = 0; i< 20; i++) {
     
     num = user_node_num;
     fill(pass.begin(  ), pass.end(  ), false);
@@ -325,13 +325,12 @@ void  Loc_choose::delete_canduate( void ){
     if(last.locs!= server_candiate[ i ].locs  ){
       last=server_candiate[ i ];
       temps.push_back( last );
-      if(temps.size()>=max_candiate_num){
+      if(temps.size()>= 40){
         break;
       }
     }
   }
   server_candiate=temps;
-  
 }
 
  void Loc_choose::generate_case( Server_loc& lhs, Server_loc &rhs){
@@ -348,27 +347,31 @@ void  Loc_choose::delete_canduate( void ){
     random_shuffle(tempLoc.begin(), tempLoc.end());
     Server_loc tempS;
     int minL= len1< len2? len1:len2;
-    minL--;
+    minL--; ;
     if(minL<0) {
       minL=0;
     }
+
     int maxL= len1< len2? len2:len1;
     maxL++;
     if(maxL>tempLoc.size()){
       maxL=tempLoc.size();
     }
-      
+
     int outLen = minL + (rand() % (int)(maxL - minL + 1));
       
     tempS.locs.insert(tempLoc.begin(), tempLoc.begin()+outLen);
     bestLayoutFlow(tempS);
-    update(tempS, false);
+    if(network_node_num*user_node_num<100000){
+        
+        update(tempS, deleteSmall);
+    }
     server_candiate.push_back(tempS);
   
 }
 void  Loc_choose::randdom_generate(void){
 
-  size_t firstLen=4;
+  size_t firstLen=first_class_candiate_num;
   
   if(server_candiate.size()< firstLen){
     firstLen=server_candiate.size();
@@ -400,7 +403,6 @@ void  Loc_choose::randdom_generate(void){
     generate_case(server_candiate[i], server_candiate[rid]);
 
   }
-    
 }
 
   void Loc_choose::update(Server_loc &server, bool recursive) {
@@ -795,10 +797,25 @@ char *Loc_choose::solve() {
     }
     if(value_supper==last_best_value){
       steable_time++;
+      first_class_candiate_num--;
+      if(first_class_candiate_num<1){
+         first_class_candiate_num=1;
+      }
     }else{
+      deleteSmall=false;
       steable_time=0;
     }
+    if(steable_time>5){
+        first_class_candiate_num=3*steable_time/5; 
+    }
+    
     if(steable_time>10){
+
+       deleteSmall=true;
+    }
+
+            
+    if(steable_time>30){
       break;
     }
     

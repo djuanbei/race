@@ -93,7 +93,8 @@ class Loc_choose {
   
   double delete_para;
 
-  int max_candiate_num;
+  int first_class_candiate_num;
+  bool deleteSmall;
 
   int raoDong(  ) const{
     return  rand() % 3 -1;
@@ -174,7 +175,8 @@ class Loc_choose {
     randTryNum=100;
     delete_para = 0.5;
     totCap = 0;
-    max_candiate_num=30;
+    first_class_candiate_num=1;
+    deleteSmall=false;
     
     for (vector<int>::const_iterator it = user_demand.begin();
          it != user_demand.end(); it++) {
