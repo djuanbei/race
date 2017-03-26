@@ -335,7 +335,7 @@ void Loc_choose::update(Server_loc &server, bool recursive) {
 
   while(server.success_bw< totCap){
     double left=totCap-server.success_bw;
-    int es_add_num=((left/(totCap-server.success_bw+0.1))*server.locs.size())/2+1;
+    int es_add_num=1;//((left/(totCap-server.success_bw+0.1))*server.locs.size())/5+1;
   
     vector<pair<double, int> > candiateN;
         
@@ -376,7 +376,7 @@ void Loc_choose::update(Server_loc &server, bool recursive) {
 
     if(!candiateN.empty()){
       sort(candiateN.rbegin(), candiateN.rend());
-      int addN=candiateN.size()/2+1;
+      int addN=1;//candiateN.size()/5+1;
       for(size_t i=0; i< addN && i< candiateN.size(); i++){
         server.locs.insert(candiateN[i].second);
       }
@@ -406,7 +406,7 @@ void Loc_choose::update(Server_loc &server, bool recursive) {
         
         sort(candiateN.begin(), candiateN.end());
         
-        int deleteN=candiateN.size()/2+1;
+        int deleteN=1;//candiateN.size()/5+1;
         
         Server_loc tempS = server;
         
@@ -628,7 +628,6 @@ bool Loc_choose::domain_intersection_check() {
 
   server_candiate.push_back(tempS);
   
-
   
   if(value_lower> minServerNum * server_price ){
     value_lower = minServerNum * server_price;    
@@ -674,7 +673,6 @@ char *Loc_choose::solve() {
     return output();
   }
   
-
   
   if (smallestUer()) {
     return output();
@@ -712,15 +710,25 @@ char *Loc_choose::solve() {
   if (value_lower < 2 * server_price) {
     value_lower = 2 * server_price;
   }
-  
-  lower_update();
-  
-  for (int k = 0; k < user_node_num/20+5; k++) {
 
+  lower_update();
+  int steable_time=0;
+  int last_best_value=-1;
+  for (int k = 0; k < user_node_num+5; k++) {
+    // std::cout << "time(s): "<<systemTime()-start_time<<" value: "<<value_supper << std::endl;
     if(systemTime()-start_time> time_bound-5){
       break;
     }
-
+    if(value_supper==last_best_value){
+      steable_time++;
+    }else{
+      steable_time=0;
+    }
+    if(steable_time>10){
+      break;
+    }
+    
+    last_best_value=value_supper;
 
     sort(server_candiate.begin(), server_candiate.end());
 
