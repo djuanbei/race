@@ -173,19 +173,6 @@ class undirected_graph {
   void getMinVertexCover(vector<int> &nodes);
 
 
-  /**
-   *@brief compute a shortest path which connect src and snk by bidirection
-   *dijstra method
-   *
-   * @param src source vertex id
-   * @param snk target vertex id
-   * @param path __return__ link path
-   *
-   * @return true if find a path, false otherwise
-   */
-
-  bool bicompute_shortest_path_dijkstra(const int src, const int snk,
-                                        vector<int> &path);
 
   /**
    *  sequence call
@@ -204,18 +191,7 @@ class undirected_graph {
                                    vector<int> &ins,
                                    vector<int> &node_sum_value);
 
-  /**
-   *  parallel call
-   * compute the mincost maxflow from src to snk
-   * @param src
-   * @param snk
-   * @param caps undirected link capacity
-   *
-   * @return maxflow  and total cost
-   */
 
-  pair<int, int> getMinCostMaxFlowP(const int src, const int snk,
-                                    const vector<int> &caps);
 
   /**
    *

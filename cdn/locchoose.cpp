@@ -20,6 +20,9 @@ double systemTime(void) {
   struct timespec start;
 #ifndef __MACH__
   clock_gettime(CLOCK_MONOTONIC, &start);
+#else
+  double re=clock();
+  return re/CLOCKS_PER_SEC;
 #endif
   return start.tv_sec + start.tv_nsec / 1000000000.0;
 }
@@ -815,7 +818,7 @@ char *Loc_choose::solve() {
     }
 
             
-    if(steable_time>30){
+    if(steable_time>20){
       break;
     }
     
