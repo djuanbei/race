@@ -101,7 +101,7 @@ void Loc_choose::initial() {
       graph.dijkstra_tree(network_node, dis);
       for(int user_node=0; user_node< user_node_num; user_node++){
           int temp=user_to_network_map[user_node];
-          network_to_user_inv_distance[network_node][user_node]=1.0/(dis[temp]+1); 
+          network_to_user_inv_distance[network_node][user_node]=1.0/( (dis[temp]+1)*(dis[temp]+1) ); 
       }
   }
   releaseVirLinks();
