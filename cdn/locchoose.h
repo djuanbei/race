@@ -32,6 +32,13 @@ class Loc_choose {
 
     Server_loc() : success_bw(0), total_price(0) {}
     bool operator<(const Server_loc &other) const {
+      
+      if(success_bw> other.success_bw  ){
+        return  true;
+      }else if( success_bw<other.success_bw ){
+        return false;
+      }
+      
       if (0 == success_bw) {
         return 0 == other.success_bw;
       }
