@@ -71,7 +71,7 @@ void deploy_server(char *topo[MAX_EDGE_NUM], int line_num, char *filename) {
   line_id++;
 
   i = 0;
-  int target_link_start = 2 * srcs.size();
+  int target_link_start =  2*srcs.size();
 
   vector<int> user_demand;
   while (i < user_node_num) {

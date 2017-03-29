@@ -5,11 +5,11 @@
 
 #include <algorithm>
 
+#include <assert.h>
 #include <sys/resource.h>
 #include <sys/time.h>
 #include <time.h>
 #include <unistd.h>
-
 #include "locchoose.h"
 
 namespace raptor {
@@ -98,7 +98,7 @@ void Loc_choose::initial() {
     for (int user_node = 0; user_node < user_node_num; user_node++) {
       int temp = user_to_network_map[user_node];
       network_to_user_inv_distance[network_node][user_node] =
-          1.0 / (dis[temp] + 1);// * (dis[temp] + 1));
+          1.0 / (dis[temp] + 1);  // * (dis[temp] + 1));
     }
   }
   releaseVirLinks();
@@ -120,7 +120,7 @@ void Loc_choose::initial_case(void) {
 
   for (int network_node = 0; network_node < network_node_num; network_node++) {
     int len = network_node_cover_domain[network_node].size();
-    Q.push(make_pair(-len, network_node));
+    Q.push(-len, network_node);
     connect_num[network_node] = -len;
   }
 
@@ -138,7 +138,7 @@ void Loc_choose::initial_case(void) {
          network_node++) {
       int len = network_node_cover_domain[network_node].size() + raoDong();
 
-      Q.push(make_pair(-len, network_node));
+      Q.push(-len, network_node);
       connect_num[network_node] = -len;
     }
 
@@ -147,8 +147,11 @@ void Loc_choose::initial_case(void) {
     int num = user_node_num;
 
     while (!Q.empty()) {
-      pair<int, int> p = Q.top();
-      int network_node = p.second;
+      int temp;
+      int network_node;
+      // pair<int, int> p =
+      Q.top(temp, network_node);
+      // int network_node = p.second;
       tempServer.locs.insert(network_node);
 
       Q.pop();
@@ -168,7 +171,7 @@ void Loc_choose::initial_case(void) {
             connect_num[*nit]++;
             connect_num[*nit] += raoDong();
 
-            Q.push(make_pair(connect_num[*nit], *nit));
+            Q.push(connect_num[*nit], *nit);
           }
         }
       }
@@ -181,8 +184,7 @@ void Loc_choose::initial_case(void) {
     bestLayoutFlow(tempServer);
 
     update(tempServer, true);
-    addLoc( tempServer );
-
+    addLoc(tempServer);
   }
 
   if (value_lower > minServerNum * server_price) {
@@ -199,8 +201,9 @@ void Loc_choose::lower_update() {
       cap += success_server_candiate[i].success_bw;
       temp_value += success_server_candiate[i].total_price;
     } else {
-      temp_value += success_server_candiate[i].total_price *
-                    ((totCap - cap) / (success_server_candiate[i].success_bw + 0.01));
+      temp_value +=
+          success_server_candiate[i].total_price *
+          ((totCap - cap) / (success_server_candiate[i].success_bw + 0.01));
       if (value_lower > temp_value) {
         value_lower = temp_value;
       }
@@ -242,8 +245,7 @@ bool Loc_choose::smallestUer() {
   if (2 + choosedServer.size() >= user_node_num) {
     Server_loc tempS;
     bestLayoutFlow(tempS);
-    addLoc( tempS );
-
+    addLoc(tempS);
 
     for (int user_node = 0; user_node < user_node_num; user_node++) {
       if (!user_direct_server[user_node]) {
@@ -251,8 +253,7 @@ bool Loc_choose::smallestUer() {
         Server_loc tempS;
         tempS.locs.insert(network_node);
         bestLayoutFlow(tempS);
-        addLoc( tempS );
-
+        addLoc(tempS);
       }
     }
 
@@ -262,34 +263,50 @@ bool Loc_choose::smallestUer() {
   return false;
 }
 
-
 bool Loc_choose::bestLayoutFlow(Server_loc &server) {
-
-
-  
   server.locs.insert(choosedServer.begin(), choosedServer.end());
 
   vector<int> caps = orignal_caps;
+  int leftCap = totCap;
   for (set<int>::iterator nid = server.locs.begin(); nid != server.locs.end();
        nid++) {
     caps[*nid] = totCap;
+    if (network_node_user_map[*nid] > -1) {
+      int user_node = network_node_user_map[*nid];
+      int inlink = target_link_start / 2 + user_node;
+      leftCap -= user_demand[user_node];
+
+      caps[inlink] = 0;
+    }
   }
 
   vector<int> outs;
   vector<int> ins;
   vector<int> node_sum_value;
   server.user_in_bandwidth.resize(user_node_num, 0);
-  
+
   pair<int, int> one_elem = graph.getMinCostMaxFlow(
-      virtual_source, virtual_target, caps, totCap, outs, ins, node_sum_value);
-  
+      virtual_source, virtual_target, caps, leftCap, outs, ins, node_sum_value);
 
   server.success_bw = one_elem.first;
 
-  server.locs.clear();
-
   server.reach_node_value.clear();
   server.outBandwidth.clear();
+
+  for (set<int>::iterator nid = server.locs.begin(); nid != server.locs.end();
+       nid++) {
+    if (network_node_user_map[*nid] > -1) {
+      int user_node = network_node_user_map[*nid];
+      ins[*nid] += user_demand[user_node];
+      assert(ins[*nid] == user_demand[user_node]);
+
+      server.success_bw += user_demand[user_node];
+      ;
+      outs[*nid] += user_demand[user_node];
+    }
+  }
+
+  server.locs.clear();
 
   for (int network_node = 0; network_node < network_node_num; network_node++) {
     if (outs[network_node] > 0) {
@@ -306,20 +323,18 @@ bool Loc_choose::bestLayoutFlow(Server_loc &server) {
       server.reach_node_value[network_node] = node_sum_value[network_node];
     }
   }
+
   server.total_price = one_elem.second + server.locs.size() * server_price;
 
-  return  time_end(  );
-
+  return time_end();
 }
 
 void Loc_choose::delete_canduate(void) {
-
-  if( success_server_candiate .size(  )>1 ){
+  if (success_server_candiate.size() > 1) {
     vector<Server_loc> temps;
     Server_loc last = success_server_candiate[0];
     temps.push_back(last);
 
-  
     for (size_t i = 1; i < success_server_candiate.size(); i++) {
       if (last.locs != success_server_candiate[i].locs) {
         last = success_server_candiate[i];
@@ -329,30 +344,23 @@ void Loc_choose::delete_canduate(void) {
         }
       }
     }
-  
-    success_server_candiate = temps;
 
+    success_server_candiate = temps;
   }
 
-  if(part_server_candiate.size(  )>1  ){
+  if (part_server_candiate.size() > 1) {
     vector<Server_loc> temps;
     Server_loc last = part_server_candiate[0];
     temps.push_back(last);
-    for( size_t i=0; i< part_server_candiate.size(  ); i++ ){
-      
+    for (size_t i = 0; i < part_server_candiate.size(); i++) {
       last = part_server_candiate[i];
       temps.push_back(last);
       if (temps.size() >= para.part_left_num) {
         break;
       }
-    
     }
-    part_server_candiate=temps;
-    
+    part_server_candiate = temps;
   }
-  
-  
-  
 }
 
 void Loc_choose::generate_case(Server_loc &lhs, Server_loc &rhs) {
@@ -387,11 +395,9 @@ void Loc_choose::generate_case(Server_loc &lhs, Server_loc &rhs) {
   // if (network_node_num * user_node_num < 100000) {
   update(tempS, para.deleteSmall);
   // }
-  addLoc( tempS );
-
+  addLoc(tempS);
 }
 void Loc_choose::randdom_generate(void) {
-  
   size_t firstLen = para.first_class_candiate_num;
 
   if (part_server_candiate.size() < firstLen) {
@@ -399,42 +405,34 @@ void Loc_choose::randdom_generate(void) {
   }
 
   for (size_t i = 0; i < firstLen; i++) {
-
     for (size_t j = i; j < firstLen; j++) {
       generate_case(part_server_candiate[i], part_server_candiate[j]);
     }
   }
 
   sort(part_server_candiate.begin(), part_server_candiate.end());
-  
 
-  if( part_server_candiate.size(  )>0 ){
-    
-
-    int secondLen=part_server_candiate.size();
+  if (part_server_candiate.size() > 0) {
+    int secondLen = part_server_candiate.size();
 
     secondLen--;
 
     for (size_t i = 0; i < firstLen; i++) {
-    
       int rid = firstLen + (rand() % (int)(secondLen - firstLen + 1));
       generate_case(part_server_candiate[i], part_server_candiate[rid]);
 
       rid = firstLen + (rand() % (int)(secondLen - firstLen + 1));
       generate_case(part_server_candiate[i], part_server_candiate[rid]);
-
     }
   }
-  
-
 }
 
 void Loc_choose::update(Server_loc &server, bool recursive) {
   while (server.success_bw < totCap) {
     double left = totCap - server.success_bw;
-    
-    int es_add_num =para.add_num;
-    
+
+    int es_add_num = para.add_num;
+
     // if(  )
 
     vector<pair<double, int>> candiateN;
@@ -450,8 +448,8 @@ void Loc_choose::update(Server_loc &server, bool recursive) {
       if (server.locs.find(network_node) == server.locs.end()) {
         float temp_value = 0;
         for (int user_node = 0; user_node < user_node_num; user_node++) {
-          temp_value += leftBandwidth[user_node] *
-                        network_to_user_inv_distance[network_node][user_node];
+          temp_value += (leftBandwidth[user_node] *
+                         network_to_user_inv_distance[network_node][user_node])*( 1+(rand(  )%100)/1000.0 );
         }
         candiateN.push_back(make_pair(temp_value, network_node));
       }
@@ -462,8 +460,8 @@ void Loc_choose::update(Server_loc &server, bool recursive) {
       server.locs.insert(candiateN[i].second);
     }
 
-    if(bestLayoutFlow(server)){
-      return ;
+    if (bestLayoutFlow(server)) {
+      return;
     }
   }
 
@@ -478,12 +476,12 @@ void Loc_choose::update(Server_loc &server, bool recursive) {
 
     if (!candiateN.empty()) {
       sort(candiateN.rbegin(), candiateN.rend());
-      int addN = 1;  
+      int addN = 1;
       for (size_t i = 0; i < addN && i < candiateN.size(); i++) {
         server.locs.insert(candiateN[i].second);
       }
 
-      if(bestLayoutFlow(server)){
+      if (bestLayoutFlow(server)) {
         return;
       }
 
@@ -508,14 +506,14 @@ void Loc_choose::update(Server_loc &server, bool recursive) {
       if (!candiateN.empty()) {
         sort(candiateN.begin(), candiateN.end());
 
-        int deleteN = 1;  
+        int deleteN = 1;
 
         Server_loc tempS = server;
 
         for (size_t i = 0; i < deleteN && i < candiateN.size(); i++) {
           tempS.locs.erase(candiateN[i].second);
-          
-          if(bestLayoutFlow(tempS)){
+
+          if (bestLayoutFlow(tempS)) {
             return;
           }
           update(tempS, false);
@@ -525,8 +523,7 @@ void Loc_choose::update(Server_loc &server, bool recursive) {
               server = tempS;
               state = true;
             } else {
-              addLoc( tempS );
-
+              addLoc(tempS);
             }
           }
 
@@ -685,7 +682,7 @@ bool Loc_choose::domain_intersection_check() {
 
   for (int network_node = 0; network_node < network_node_num; network_node++) {
     int len = network_node_cover_domain[network_node].size();
-    Q.push(make_pair(-len, network_node));
+    Q.push(-len, network_node);
     connect_num[network_node] = -len;
   }
 
@@ -695,8 +692,10 @@ bool Loc_choose::domain_intersection_check() {
   int num = user_node_num;
 
   while (!Q.empty()) {
-    pair<int, int> p = Q.top();
-    int network_node = p.second;
+    int temp, network_node;
+    // pair<int, int> p =
+    Q.top(temp, network_node);
+    // int network_node = p.second;
 
     Q.pop();
     vector<int> users = network_node_cover_domain[network_node];
@@ -714,7 +713,7 @@ bool Loc_choose::domain_intersection_check() {
         for (vector<int>::iterator nit = server_candiate_locs[*it].begin();
              nit != server_candiate_locs[*it].end(); nit++) {
           connect_num[*nit]++;
-          Q.push(make_pair(connect_num[*nit], *nit));
+          Q.push(connect_num[*nit], *nit);
         }
       }
     }
@@ -737,24 +736,20 @@ bool Loc_choose::domain_intersection_check() {
     if ((totCap == temp.success_bw) && (temp.total_price < value_supper)) {
       value_supper = temp.total_price;
     }
-    addLoc( temp );
-
+    addLoc(temp);
   }
   // }
-  
 
   bestLayoutFlow(tempS);
 
   update(tempS, true);
-  addLoc( tempS );
-
+  addLoc(tempS);
 
   if (value_lower > minServerNum * server_price) {
     value_lower = minServerNum * server_price;
   }
 
   return false;
-  
 }
 char *Loc_choose::solve() {
   /**
@@ -784,12 +779,11 @@ char *Loc_choose::solve() {
 
   bestLayoutFlow(tempS);
   update(tempS, true);
-  addLoc( tempS );
+  addLoc(tempS);
 
   if (0 == server_price) {
     return output();
   }
-
 
   if (domain_intersection_check()) {
     return output();
@@ -800,7 +794,6 @@ char *Loc_choose::solve() {
   }
 
   value_supper = user_node_num * server_price;
-
 
   lower_update();
 
@@ -822,8 +815,8 @@ char *Loc_choose::solve() {
   for (int k = 0; k < user_node_num + 5; k++) {
     std::cout << "time(s): " << systemTime() - start_time
               << " value: " << value_supper << std::endl;
-    
-    if(time_end(  )  ){
+
+    if (time_end()) {
       break;
     }
     // if(systemTime()-start_time> 300){
@@ -831,8 +824,8 @@ char *Loc_choose::solve() {
     // }
     if (value_supper == last_best_value) {
       para.add_num--;
-      if( para.add_num<1 ){
-        para.add_num=1;
+      if (para.add_num < 1) {
+        para.add_num = 1;
       }
       steable_time++;
       para.first_class_candiate_num--;
@@ -841,14 +834,14 @@ char *Loc_choose::solve() {
       }
     } else {
       para.add_num++;
-      if(para.add_num>5  ){
-        para.add_num=5 ;
+      if (para.add_num > 5) {
+        para.add_num = 5;
       }
       para.deleteSmall = false;
       steable_time = 0;
     }
     if (steable_time > 5) {
-      para.first_class_candiate_num =  steable_time / 5+1;
+      para.first_class_candiate_num = steable_time / 5 + 1;
     }
 
     if (steable_time > 10) {
@@ -862,8 +855,8 @@ char *Loc_choose::solve() {
     last_best_value = value_supper;
 
     sort(success_server_candiate.begin(), success_server_candiate.end());
-    
-    sort(part_server_candiate.begin(  ), part_server_candiate.end(  )  );
+
+    sort(part_server_candiate.begin(), part_server_candiate.end());
 
     delete_canduate();
 
