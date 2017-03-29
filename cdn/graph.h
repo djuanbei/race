@@ -1,10 +1,10 @@
 #ifndef __graph_h
 #define __graph_h
 
+#include <limits>
 #include "heap.h"
-#include<limits>
 
-#include<vector>
+#include <vector>
 
 namespace raptor {
 
@@ -151,10 +151,8 @@ class undirected_graph {
     return in2outLink_map[link_starts[inIndex[v] + i].link];
   }
 
-
-   
   void dijkstra_tree(const int src, vector<int> &dis);
-    
+
   /**
    *
    * compute shortest path tree which distance less or equal than limit
@@ -172,8 +170,6 @@ class undirected_graph {
    */
   void getMinVertexCover(vector<int> &nodes);
 
-
-
   /**
    *  sequence call
    * compute the mincost maxflow from src to snk
@@ -187,11 +183,9 @@ class undirected_graph {
    * @return  maxflow  and total cost
    */
   pair<int, int> getMinCostMaxFlow(const int src, const int snk,
-                                   const vector<int> &caps, vector<int> &outs,
+                                   const vector<int> &caps, const int totCap, vector<int> &outs,
                                    vector<int> &ins,
                                    vector<int> &node_sum_value);
-
-
 
   /**
    *
@@ -227,11 +221,6 @@ class undirected_graph {
    */
   int path_cost(const vector<int> &path) const;
 };
-
-
 }
 
-
-
 #endif
-

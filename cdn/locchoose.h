@@ -1,23 +1,21 @@
 #ifndef _LOC_CHOOSE_H
 #define _LOC_CHOOSE_H
 
-#include<vector>
-#include <utility>
+#include <cstdlib>
 #include <limits>
-#include<set>
-#include<map>
-#include<cstdlib>
+#include <map>
+#include <set>
+#include <utility>
+#include <vector>
 #include "graph.h"
 
 namespace raptor {
 
-    
 using namespace std;
-
 
 double systemTime(void);
 
-const static int time_bound=90;
+const static int time_bound = 90;
 
 class Loc_choose {
   struct Server_loc {
@@ -33,12 +31,13 @@ class Loc_choose {
     Server_loc() : success_bw(0), total_price(0) {}
     bool operator<(const Server_loc &other) const {
       
-      if(success_bw> other.success_bw  ){
-        return  true;
-      }else if( success_bw<other.success_bw ){
-        return false;
-      }
+      // if (success_bw > other.success_bw) {
+      //   return true;
+      // } else if (success_bw < other.success_bw) {
+      //   return false;
+      // }
       
+
       if (0 == success_bw) {
         return 0 == other.success_bw;
       }
@@ -47,6 +46,37 @@ class Loc_choose {
       }
       return (total_price / (success_bw + 0.01)) <
              (other.total_price / (other.success_bw + 0.01));
+    }
+  };
+
+
+
+  struct Para{
+    
+    int randTryNum;
+    
+    double delete_para;
+
+    int first_class_candiate_num;
+    
+    bool deleteSmall;
+    
+    int stable_bound;
+    int success_left_num;
+    int part_left_num;
+    int add_num;
+    
+    
+    Para(  ){
+      
+      randTryNum= 100;
+      delete_para = 0.5;
+      first_class_candiate_num = 1;
+      deleteSmall = false;
+      stable_bound=26;
+      success_left_num=10;
+      part_left_num=50;
+      add_num=7;
     }
   };
 
@@ -70,9 +100,13 @@ class Loc_choose {
   const vector<int> &orignal_caps;
 
   int value_supper, value_lower;
-  vector<Server_loc> server_candiate;
+  
+  vector<Server_loc> success_server_candiate;
+  
+  vector<Server_loc> part_server_candiate;
 
   int lest_link_price;
+  
   int large_link_price;
   double mean_link_price;
   int middle_link_price;
@@ -80,10 +114,11 @@ class Loc_choose {
   int smallest_user;
   int large_user;
 
-  int  randTryNum;
+
   /**
-   * for every user u there at less a network node in server_candiate_locs[u] used as a server
-   * 
+   * for every user u there at less a network node in server_candiate_locs[u]
+   * used as a server
+   *
    */
 
   vector<vector<int>> server_candiate_locs;
@@ -95,18 +130,25 @@ class Loc_choose {
   set<int> choosedServer;
 
   vector<int> allChoose;
-  vector< vector<float> >   network_to_user_inv_distance;
-    
   
-  double delete_para;
+  vector<vector<float>> network_to_user_inv_distance;
+  
+  Para para;
 
-  int first_class_candiate_num;
-  bool deleteSmall;
+  void addLoc( Server_loc & server ){
+    if( totCap==server.success_bw ){
+      success_server_candiate.push_back( server );
+    }
+    part_server_candiate.push_back( server );
 
-  int raoDong(  ) const{
-    return  rand() % 3 -1;
   }
   
+  bool time_end(  ) const{
+    return systemTime() - start_time > time_bound - 10;
+  }
+  
+  int raoDong() const { return rand() % 3 - 1; }
+
   void initial();
 
   void initial_candidate_loc();
@@ -134,9 +176,8 @@ class Loc_choose {
    */
   bool smallestUer();
 
-  void tryKServer(const int k);
 
-  void bestLayoutFlow(Server_loc &server);
+  bool bestLayoutFlow(Server_loc &server);
 
   bool domain_intersection_check();
 
@@ -153,14 +194,14 @@ class Loc_choose {
 
   void initial_case(void);
 
-  void  delete_canduate( void );
-    
-  void  generate_case( Server_loc& lhs, Server_loc &rhs);
-    
-  void  randdom_generate(void);
+  void delete_canduate(void);
+
+  void generate_case(Server_loc &lhs, Server_loc &rhs);
+
+  void randdom_generate(void);
 
   char *output();
-  
+
   double start_time;
 
  public:
@@ -178,13 +219,11 @@ class Loc_choose {
         network_node_user_map(node_map),
         user_demand(dcaps),
         orignal_caps(caps) {
-    start_time=systemTime();
-    randTryNum=100;
-    delete_para = 0.5;
-    totCap = 0;
-    first_class_candiate_num=1;
-    deleteSmall=false;
     
+    start_time = systemTime();
+    
+    totCap = 0;
+
     for (vector<int>::const_iterator it = user_demand.begin();
          it != user_demand.end(); it++) {
       totCap += *it;
@@ -197,8 +236,8 @@ class Loc_choose {
     value_lower = INF;
     user_direct_server.resize(user_node_num, false);
     network_to_user_inv_distance.resize(network_node_num);
-    for(int i=0; i< network_node_num; i++){
-        network_to_user_inv_distance[i].resize(user_node_num,  0.0f);
+    for (int i = 0; i < network_node_num; i++) {
+      network_to_user_inv_distance[i].resize(user_node_num, 0.0f);
     }
 
     initial();

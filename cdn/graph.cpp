@@ -1,14 +1,13 @@
 
-#include<assert.h>
+#include <assert.h>
 
 #include "graph.h"
 #include "heap.h"
 
-#include<algorithm>
+#include <algorithm>
 
 namespace raptor {
 using namespace std;
-
 
 void undirected_graph::initial(const vector<int> &esrcs,
                                const vector<int> &esnks,
@@ -168,11 +167,7 @@ bool undirected_graph::findRhs(const int link, const int lhs, int &rhs) const {
   return false;
 }
 
-
-    
-void undirected_graph::dijkstra_tree(const int src, 
-                                               vector<int> &dis) {
-
+void undirected_graph::dijkstra_tree(const int src, vector<int> &dis) {
   size_t j, outDegree, link, next;
   int current;
   int weight;
@@ -198,7 +193,7 @@ void undirected_graph::dijkstra_tree(const int src,
       const endElement &neighbour = link_ends[link];
       weight = current_weight + neighbour.weight;
       next = neighbour.snk;
-      if ( weight < dis[next]) {
+      if (weight < dis[next]) {
         parent[next] = current;
         preLink[next] = link;
         dis[next] = weight;
@@ -206,14 +201,13 @@ void undirected_graph::dijkstra_tree(const int src,
       }
     }
   }
-
 }
 
 void undirected_graph::dijkstra_limit_tree(const int src, const int limit,
                                            vector<pair<int, int>> &tree) {
   tree.clear();
-  if(0==limit){
-      return;
+  if (0 == limit) {
+    return;
   }
 
   size_t j, outDegree, link, next;
@@ -423,9 +417,10 @@ int undirected_graph::dijkstra(const int src, const int snk,
 }
 
 pair<int, int> undirected_graph::getMinCostMaxFlow(
-    const int src, const int snk, const vector<int> &ecaps, vector<int> &outputs,
-    vector<int> &inputs, vector<int> &node_sum_value) {
-  assert(link_num == 2 * ecaps.size());
+    const int src, const int snk, const vector<int> &ecaps,  const int totCap,
+    vector<int> &outputs, vector<int> &inputs, vector<int> &node_sum_value) {
+  
+
   fill(dist.begin(), dist.end(), INF);
   fill(width.begin(), width.end(), 0);
   fill(flow.begin(), flow.end(), 0);
@@ -449,9 +444,17 @@ pair<int, int> undirected_graph::getMinCostMaxFlow(
   int totflow = 0, totcost = 0;
   int amt = dijkstra(src, snk, caps);
   while (amt > 0) {
+    
+    int lastLink = (dad[snk].second) / 2;
+    inputs[_srcs[lastLink]] += amt;
+
+    int link=0;
+    
     totflow += amt;
+    
     for (int x = snk; x != src; x = dad[x].first) {
-      int link = (dad[x].second) / 2;
+      
+      link = (dad[x].second) / 2;
 
       if (1 == ((dad[x].second) % 2)) {
         flow[link] += amt;
@@ -461,36 +464,41 @@ pair<int, int> undirected_graph::getMinCostMaxFlow(
         totcost -= amt * link_ends[link].weight;
       }
     }
+
+    outputs[link_ends[link].snk] += amt;
+    
     amt = dijkstra(src, snk, caps);
   }
-
-  vector<int> path;
-  amt = dijkstra(src, snk, flow, path);
-  while (amt > 0) {
-    int value = 0;
-    int firstLink = path.front();
-
-    outputs[link_ends[firstLink].snk] += amt;
-
-    int lastLink = path.back();
-    inputs[_srcs[lastLink]] += amt;
-
-    for (vector<int>::iterator it = path.begin(); it != path.end(); it++) {
-      int link = *it;
-      value += amt * link_ends[link].weight;
-
-      flow[link] -= amt;
-
-      node_sum_value[link_ends[link].snk] += value;
-    }
-
+  
+  if(totCap== totflow ){
+    
+    vector<int> path;
     amt = dijkstra(src, snk, flow, path);
-  }
+    while (amt > 0) {
+      int value = 0;
+      
+      // int firstLink = path.front();
 
+      // outputs[link_ends[firstLink].snk] += amt;
+
+      // int lastLink = path.back();
+      // inputs[_srcs[lastLink]] += amt;
+
+      for (vector<int>::iterator it = path.begin(); it != path.end(); it++) {
+        int link = *it;
+        value += amt * link_ends[link].weight;
+
+        flow[link] -= amt;
+
+        node_sum_value[link_ends[link].snk] += value;
+      }
+
+      amt = dijkstra(src, snk, flow, path);
+    }
+  }
+  
   return make_pair(totflow, totcost);
 }
-
-
 
 void undirected_graph::getMinCostMaxFlow(int src, const int snk,
                                          const vector<int> &ecaps,
@@ -565,5 +573,4 @@ int undirected_graph::path_cost(const vector<int> &path) const {
   }
   return re;
 }
-
 }

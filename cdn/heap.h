@@ -44,7 +44,5 @@ class Fixed_heap {
     fill(indices.begin(), indices.end(), -1);
   }
 };
-
 }
 #endif
-
