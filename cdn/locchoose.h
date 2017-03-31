@@ -129,7 +129,7 @@ class Loc_choose {
 
   vector<Server_loc> success_server_candiate;
 
-  vector<Server_loc> part_server_candiate;
+  vector<Server_loc> server_candiate;
 
   int lest_link_price;
 
@@ -160,11 +160,15 @@ class Loc_choose {
 
   Para para;
 
-  void addLoc(Server_loc &server) {
-    if (totCap == server.success_bw) {
-      success_server_candiate.push_back(server);
+  void addLoc(Server_loc &loc) {
+    if (totCap == loc.success_bw) {
+      if (loc.total_price < best_loc.total_price) {
+        best_loc = loc;
+        value_supper=loc.total_price;
+      }
     }
-    part_server_candiate.push_back(server);
+    server_candiate.push_back(loc);
+
   }
 
   bool time_end() const { return systemTime() - start_time > time_bound - 5; }
@@ -187,7 +191,7 @@ class Loc_choose {
 
   void lower_update();
 
-  void supper_update();
+  // void supper_update();
 
   /**
    * @brief when the number of user is small then there are some condition to
@@ -224,6 +228,7 @@ class Loc_choose {
   char *output();
 
   double start_time;
+  Server_loc best_loc;
 
  public:
   Loc_choose(undirected_graph &g, int network_n_num, int user_n_num,
@@ -242,6 +247,9 @@ class Loc_choose {
         orignal_caps(caps) {
     start_time = systemTime();
 
+    best_loc.total_price = INF;
+    best_loc.success_bw = -100;
+    
     totCap = 0;
 
     for (vector<int>::const_iterator it = user_demand.begin();
