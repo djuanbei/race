@@ -30,14 +30,6 @@ class Loc_choose {
 
     Server_loc() : success_bw(0), total_price(0) {}
     bool operator<(const Server_loc &other) const {
-      
-      // if (success_bw > other.success_bw) {
-      //   return true;
-      // } else if (success_bw < other.success_bw) {
-      //   return false;
-      // }
-      
-
       if (0 == success_bw) {
         return 0 == other.success_bw;
       }
@@ -49,34 +41,68 @@ class Loc_choose {
     }
   };
 
+  float simliar(const Server_loc &lhs, const Server_loc &rhs) const {
+    double sum = 0;
+    double fen1, fen2;
+    fen1 = fen2 = 0;
 
+    for (int i = 0; i < user_node_num; i++) {
+      sum += lhs.user_in_bandwidth[i] * rhs.user_in_bandwidth[i];
+      fen1 += lhs.user_in_bandwidth[i] * lhs.user_in_bandwidth[i];
+      fen2 += rhs.user_in_bandwidth[i] * rhs.user_in_bandwidth[i];
+    }
+    fen1 = sqrt(fen1);
+    fen2 = sqrt(fen2);
+    return (sum) / (fen1 * fen2 + 0.1);
+  }
 
-  struct Para{
-    
+  float simliar1(Server_loc &lhs, Server_loc &rhs) {
+    double sum = 0;
+    double fen1, fen2;
+    fen1 = fen2 = 0;
+
+    for (int i = 0; i < user_node_num; i++) {
+      int network_node = user_to_network_map[i];
+
+      sum += lhs.reach_node_value[network_node] *
+             rhs.reach_node_value[network_node];
+      fen1 += lhs.reach_node_value[network_node] *
+              lhs.reach_node_value[network_node];
+      fen2 += rhs.reach_node_value[network_node] *
+              rhs.reach_node_value[network_node];
+    }
+    fen1 = sqrt(fen1);
+    fen2 = sqrt(fen2);
+    return (sum) / ((fen1 * fen2 + 0.1) * lhs.success_bw * rhs.success_bw);
+  }
+
+  struct Para {
     int randTryNum;
-    
+
     double delete_para;
 
     int first_class_candiate_num;
-    
+
     bool deleteSmall;
-    
+
     int stable_bound;
     int success_left_num;
     int part_left_num;
     int add_num;
-    
-    
-    Para(  ){
-      
-      randTryNum= 100;
+    int large_scale;
+    int initcase_num;
+
+    Para() {
+      randTryNum = 100;
       delete_para = 0.5;
       first_class_candiate_num = 1;
       deleteSmall = false;
-      stable_bound=26;
-      success_left_num=10;
-      part_left_num=50;
-      add_num=7;
+      stable_bound = 10000;
+      success_left_num = 10;
+      part_left_num = 50;
+      add_num = 7;
+      large_scale = 150000;
+      initcase_num = 20;
     }
   };
 
@@ -100,20 +126,19 @@ class Loc_choose {
   const vector<int> &orignal_caps;
 
   int value_supper, value_lower;
-  
+
   vector<Server_loc> success_server_candiate;
-  
+
   vector<Server_loc> part_server_candiate;
 
   int lest_link_price;
-  
+
   int large_link_price;
   double mean_link_price;
   int middle_link_price;
 
   int smallest_user;
   int large_user;
-
 
   /**
    * for every user u there at less a network node in server_candiate_locs[u]
@@ -130,24 +155,20 @@ class Loc_choose {
   set<int> choosedServer;
 
   vector<int> allChoose;
-  
+
   vector<vector<float>> network_to_user_inv_distance;
-  
+
   Para para;
 
-  void addLoc( Server_loc & server ){
-    if( totCap==server.success_bw ){
-      success_server_candiate.push_back( server );
+  void addLoc(Server_loc &server) {
+    if (totCap == server.success_bw) {
+      success_server_candiate.push_back(server);
     }
-    part_server_candiate.push_back( server );
-
+    part_server_candiate.push_back(server);
   }
-  
-  bool time_end(  ) const{
 
-    return systemTime() - start_time > time_bound - 5;
-  }
-  
+  bool time_end() const { return systemTime() - start_time > time_bound - 5; }
+
   int raoDong() const { return rand() % 3 - 1; }
 
   void initial();
@@ -177,7 +198,6 @@ class Loc_choose {
    */
   bool smallestUer();
 
-
   bool bestLayoutFlow(Server_loc &server);
 
   bool domain_intersection_check();
@@ -195,7 +215,7 @@ class Loc_choose {
 
   void initial_case(void);
 
-  void delete_canduate(void);
+  void delete_candiate(void);
 
   void generate_case(Server_loc &lhs, Server_loc &rhs);
 
@@ -220,9 +240,8 @@ class Loc_choose {
         network_node_user_map(node_map),
         user_demand(dcaps),
         orignal_caps(caps) {
-    
     start_time = systemTime();
-    
+
     totCap = 0;
 
     for (vector<int>::const_iterator it = user_demand.begin();
@@ -241,6 +260,9 @@ class Loc_choose {
       network_to_user_inv_distance[i].resize(user_node_num, 0.0f);
     }
 
+    if (network_node_num < 300) {
+      para.first_class_candiate_num = 4;
+    }
     initial();
   }
   char *solve();
