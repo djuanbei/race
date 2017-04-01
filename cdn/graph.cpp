@@ -419,12 +419,9 @@ int undirected_graph::dijkstra(const int src, const int snk,
 }
 
 pair<int, int> undirected_graph::getMinCostMaxFlow(
-    const int src, const int snk, const vector<int> &ecaps,  const int totCap,
-    vector<int> &outputs, vector<int> &inputs, vector<int> &node_sum_value) {
+    const int src, const int snk, const vector<int> &ecaps,  const int leftCap,
+    vector<int> &outputs, vector<int> &inputs, vector<int> &node_sum_value, vector<vector<int> > &sum_of_pass_flow) {
   
-
-  // fill(dist.begin(), dist.end(), INF);
-  // fill(width.begin(), width.end(), 0);
   
   fill(flow.begin(), flow.end(), 0);
   outputs.resize(vertex_num, 0);
@@ -473,20 +470,23 @@ pair<int, int> undirected_graph::getMinCostMaxFlow(
     amt = dijkstra(src, snk, caps);
   }
   
-  if(totCap== totflow ){
+  if(leftCap== totflow ){
     
     vector<int> path;
     amt = dijkstra(src, snk, flow, path);
     while (amt > 0) {
+      int network_node_server=link_ends[path.front(  )].snk;
       int value = 0;
 
-      for (vector<int>::iterator it = path.begin(); it != path.end(); it++) {
+      for (vector<int>::iterator it = path.begin()+1; it+1 != path.end(); it++) {
         int link = *it;
         value += amt * link_ends[link].weight;
 
         flow[link] -= amt;
 
         node_sum_value[link_ends[link].snk] += value;
+
+        sum_of_pass_flow[ network_node_server ][link_ends[link].snk  ]+=amt;
       }
 
       amt = dijkstra(src, snk, flow, path);

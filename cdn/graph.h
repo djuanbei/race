@@ -185,7 +185,7 @@ class undirected_graph {
   pair<int, int> getMinCostMaxFlow(const int src, const int snk,
                                    const vector<int> &caps, const int totCap, vector<int> &outs,
                                    vector<int> &ins,
-                                   vector<int> &node_sum_value);
+                                   vector<int> &node_sum_value , vector<vector<int> > &sum_of_pass_flow);
 
   /**
    *

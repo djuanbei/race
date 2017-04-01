@@ -165,6 +165,8 @@ class Loc_choose {
 
   vector<vector<float>> network_to_user_inv_distance;
 
+  vector<vector<int>> sum_of_pass_flow;
+  
   Para para;
 
   void addLoc(Server_loc &loc) {
@@ -277,8 +279,10 @@ class Loc_choose {
     value_lower = INF;
     user_direct_server.resize(user_node_num, false);
     network_to_user_inv_distance.resize(network_node_num);
+    sum_of_pass_flow.resize(network_node_num);
     for (int i = 0; i < network_node_num; i++) {
       network_to_user_inv_distance[i].resize(user_node_num, 0.0f);
+      sum_of_pass_flow[ i ].resize( network_node_num, 0 );
     }
 
     if (network_node_num < 300) {

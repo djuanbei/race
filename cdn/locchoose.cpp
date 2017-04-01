@@ -270,6 +270,8 @@ bool Loc_choose::bestLayoutFlow(Server_loc &server) {
   for (set<int>::iterator nid = server.locs.begin(); nid != server.locs.end();
        nid++) {
     caps[*nid] = totCap;
+    fill( sum_of_pass_flow[ *nid ].begin(  ) ,sum_of_pass_flow[ *nid].end(  ), 0);
+    
     if (network_node_user_map[*nid] > -1) {
       int user_node = network_node_user_map[*nid];
       int inlink = target_link_start / 2 + user_node;
@@ -285,7 +287,7 @@ bool Loc_choose::bestLayoutFlow(Server_loc &server) {
   server.user_in_bandwidth.resize(user_node_num, 0);
 
   pair<int, int> one_elem = graph.getMinCostMaxFlow(
-      virtual_source, virtual_target, caps, leftCap, outs, ins, node_sum_value);
+      virtual_source, virtual_target, caps, leftCap, outs, ins, node_sum_value, sum_of_pass_flow );
 
   server.success_bw = one_elem.first;
 
@@ -324,6 +326,25 @@ bool Loc_choose::bestLayoutFlow(Server_loc &server) {
   }
 
   server.total_price = one_elem.second + server.locs.size() * server_price;
+  if( !time_end()&& totCap==server.success_bw ){
+    bool state=false;
+    set<int> locs=server.locs;
+    for(set<int>::iterator it= locs.begin(  ); it!= locs.end(  ); it++ ){
+      int sum=server.outBandwidth[*it];
+      
+      for(int network_node =0; network_node< network_node_num; network_node++){
+        if(2*sum_of_pass_flow[ *it ][ network_node ]>=sum  ){
+          server.locs.erase( *it );
+          server.locs.insert( network_node );
+          state=true;
+        }
+      }
+    }
+    
+    if( state ){
+      return bestLayoutFlow( server );
+    }
+  }
 
   return time_end();
 }
