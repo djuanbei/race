@@ -36,8 +36,8 @@ class Loc_choose {
       if (0 == other.success_bw) {
         return true;
       }
-      return (total_price / (success_bw + 0.01)) <
-             (other.total_price / (other.success_bw + 0.01));
+      return (total_price /(success_bw+0.1)) <
+        (other.total_price /(other.success_bw +0.1));
     }
   };
 
@@ -91,6 +91,7 @@ class Loc_choose {
     int add_num;
     int large_scale;
     int initcase_num;
+    int randAddNum;
 
     Para() {
       randTryNum = 100;
@@ -103,6 +104,7 @@ class Loc_choose {
       add_num = 7;
       large_scale = 150000;
       initcase_num = 20;
+      randAddNum=0;
     }
   };
 
@@ -139,6 +141,8 @@ class Loc_choose {
 
   int smallest_user;
   int large_user;
+  
+  // vector<int> choose_time;
 
   /**
    * for every user u there at less a network node in server_candiate_locs[u]
@@ -155,6 +159,8 @@ class Loc_choose {
   set<int> choosedServer;
 
   vector<int> allChoose;
+  
+  vector<set<int>> randCase;
 
   vector<vector<float>> network_to_user_inv_distance;
 
@@ -168,6 +174,9 @@ class Loc_choose {
       }
     }
     server_candiate.push_back(loc);
+    // for( set<int>::iterator it=loc.locs.begin(  ); it!= loc.locs.end(  ); it++ ){
+    //   choose_time[ *it ]++;
+    // }
 
   }
 
@@ -256,6 +265,9 @@ class Loc_choose {
          it != user_demand.end(); it++) {
       totCap += *it;
     }
+    
+    // choose_time.resize(network_node_num, 0  );
+    
     server_candiate_locs.resize(user_node_num);
     user_to_network_map.resize(user_node_num);
 
