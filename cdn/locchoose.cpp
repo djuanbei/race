@@ -400,14 +400,14 @@ void Loc_choose::generate_case(Server_loc &lhs, Server_loc &rhs) {
   random_shuffle(tempLoc.begin(), tempLoc.end());
 
   int minL = len1 < len2 ? len1 : len2;
-  minL -= 2;
+  minL--;
 
   if (minL < 0) {
     minL = 0;
   }
 
   int maxL = len1 < len2 ? len2 : len1;
-  maxL += 2;
+  maxL ++;
   if (maxL > tempLoc.size()) {
     maxL = tempLoc.size();
   }
@@ -560,11 +560,14 @@ void Loc_choose::update(Server_loc &server, bool recursive) {
         candiateN.push_back(make_pair(it->second, it->first));
       }
     }
-
+    int add_num=3;
+    if(  para.iterator_num>2 ){
+      add_num=1;
+    }
     if (!candiateN.empty()) {
       sort(candiateN.rbegin(), candiateN.rend());
       // server.locs.insert(candiateN[0].second);
-      for (size_t i = 0; i<2&& i < candiateN.size(); i++) {
+      for (size_t i = 0; i<add_num&& i < candiateN.size(); i++) {
         server.locs.insert(candiateN[i].second);
       }
 
@@ -890,6 +893,8 @@ char *Loc_choose::solve() {
   int steable_time = 0;
   int last_best_value = -1;
   while (true) {
+    para.iterator_num++;
+    
     std::cout << "time(s): " << systemTime() - start_time
               << " value: " << value_supper << std::endl;
 
@@ -906,7 +911,9 @@ char *Loc_choose::solve() {
         para.randAddNum=1;
       }
       if( network_node_num<600 ){
-        para.randAddNum=2;
+        if( para.randAddNum>2 ){
+          para.randAddNum=2;          
+        }
       }
       para.add_num--;
       if (para.add_num < 1) {

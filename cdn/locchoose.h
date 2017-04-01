@@ -92,7 +92,7 @@ class Loc_choose {
     int large_scale;
     int initcase_num;
     int randAddNum;
-
+    int iterator_num;
     Para() {
       randTryNum = 100;
       delete_para = 0.5;
@@ -105,6 +105,7 @@ class Loc_choose {
       large_scale = 150000;
       initcase_num = 20;
       randAddNum=0;
+      iterator_num=0;
     }
   };
 
