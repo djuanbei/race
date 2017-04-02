@@ -327,6 +327,7 @@ bool Loc_choose::bestLayoutFlow(Server_loc &server) {
 
   server.total_price = one_elem.second + server.locs.size() * server_price;
   if( !time_end()&& totCap==server.success_bw ){
+    Server_loc tempS=server;
     bool state=false;
     set<int> locs=server.locs;
     for(set<int>::iterator it= locs.begin(  ); it!= locs.end(  ); it++ ){
@@ -342,6 +343,7 @@ bool Loc_choose::bestLayoutFlow(Server_loc &server) {
     }
     
     if( state ){
+      addLoc(tempS);
       return bestLayoutFlow( server );
     }
   }
@@ -916,8 +918,8 @@ char *Loc_choose::solve() {
   while (true) {
     para.iterator_num++;
     
-    std::cout << "time(s): " << systemTime() - start_time
-              << " value: " << value_supper << std::endl;
+    // std::cout << "time(s): " << systemTime() - start_time
+    //           << " value: " << value_supper << std::endl;
 
     if (time_end()) {
       break;
