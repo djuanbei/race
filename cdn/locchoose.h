@@ -6,6 +6,7 @@
 #include <map>
 #include <set>
 #include <utility>
+#include<cmath>
 #include <vector>
 #include "graph.h"
 
@@ -27,8 +28,8 @@ class Loc_choose {
     vector<int> user_in_bandwidth;
 
     map<int, int> reach_node_value;
-
-    Server_loc() : success_bw(0), total_price(0) {}
+    bool isCheck;
+    Server_loc() : success_bw(0), total_price(0),isCheck(false)  {}
     bool operator<(const Server_loc &other) const {
       if (0 == success_bw) {
         return 0 == other.success_bw;
@@ -100,10 +101,10 @@ class Loc_choose {
       deleteSmall = false;
       stable_bound = 10000;
       success_left_num = 3;
-      part_left_num = 50;
+      part_left_num = 40;
       add_num = 7;
       large_scale = 150000;
-      initcase_num = 40;
+      initcase_num = 30;
       randAddNum=0;
       iterator_num=0;
     }
@@ -143,7 +144,7 @@ class Loc_choose {
   int smallest_user;
   int large_user;
   
-  // vector<int> choose_time;
+  vector<int> choose_time;
 
   /**
    * for every user u there at less a network node in server_candiate_locs[u]
@@ -189,28 +190,23 @@ class Loc_choose {
         }
       }
     }
-    loc=temp;
     
+    loc=temp;
   }
   
-
-  
   void addLoc(Server_loc &loc) {
+    
     if (totCap == loc.success_bw) {
-      if(best_loc.empty()){
-        best_loc.push_back(loc);
-        value_supper=best_loc.front().total_price;
-      }else if(loc.total_price<best_loc.back().total_price){
-        best_loc.push_back(loc);
-        deleteRepeat(best_loc, para.success_left_num);
-        value_supper=best_loc.front().total_price;
+      success_server_candiate.push_back(loc);
+      if(loc.total_price<best_loc.total_price){
+        value_supper=best_loc.total_price;
+        best_loc=loc;
       }
-
     }
     server_candiate.push_back(loc);
-    // for( set<int>::iterator it=loc.locs.begin(  ); it!= loc.locs.end(  ); it++ ){
-    //   choose_time[ *it ]++;
-    // }
+    for( set<int>::iterator it=loc.locs.begin(  ); it!= loc.locs.end(  ); it++ ){
+      choose_time[ *it ]++;
+    }
 
   }
 
@@ -245,7 +241,9 @@ class Loc_choose {
    */
   bool smallestUer();
 
-  bool bestLayoutFlow(Server_loc &server, bool more_check=false);
+  bool bestLayoutFlow(Server_loc &server);
+
+  bool more_check(Server_loc &server);
 
   bool domain_intersection_check();
 
@@ -271,7 +269,8 @@ class Loc_choose {
   char *output();
 
   double start_time;
-  vector<Server_loc> best_loc;
+  Server_loc best_loc;
+
 
  public:
   Loc_choose(undirected_graph &g, int network_n_num, int user_n_num,
@@ -289,7 +288,8 @@ class Loc_choose {
         user_demand(dcaps),
         orignal_caps(caps) {
     start_time = systemTime();
-
+    best_loc.success_bw=-100;
+    best_loc.total_price=INF;
     totCap = 0;
 
     for (vector<int>::const_iterator it = user_demand.begin();
@@ -297,7 +297,7 @@ class Loc_choose {
       totCap += *it;
     }
     
-    // choose_time.resize(network_node_num, 0  );
+    choose_time.resize(network_node_num, 0  );
     
     server_candiate_locs.resize(user_node_num);
     user_to_network_map.resize(user_node_num);
