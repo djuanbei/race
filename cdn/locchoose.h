@@ -73,7 +73,7 @@ class Loc_choose {
     }
     fen1 = sqrt(fen1);
     fen2 = sqrt(fen2);
-    return (sum) / ((fen1 * fen2 + 0.1) * lhs.success_bw * rhs.success_bw);
+    return (sum) / (fen1 * fen2 + 0.1); 
   }
 
   struct Para {
@@ -99,8 +99,8 @@ class Loc_choose {
       first_class_candiate_num = 1;
       deleteSmall = false;
       stable_bound = 10000;
-      success_left_num = 10;
-      part_left_num = 50;
+      success_left_num = 3;
+      part_left_num = 60;
       add_num = 7;
       large_scale = 150000;
       initcase_num = 20;
@@ -169,12 +169,43 @@ class Loc_choose {
   
   Para para;
 
+  void deleteRepeat(vector<Server_loc> &loc, const int num ){
+    
+    if(loc.size()<2){
+      return;
+    }
+    
+    sort(loc.begin(), loc.end());
+    set<int> last=loc.front().locs;
+    vector<Server_loc> temp;
+    temp.push_back(loc.front());
+    
+    for(size_t i=1; i<loc.size(); i++ ){
+      if(last!=loc[i].locs){
+        last=loc[i].locs;
+        temp.push_back(loc[i]);
+        if(temp.size()>=num){
+          break;
+        }
+      }
+    }
+    loc=temp;
+    
+  }
+  
+
+  
   void addLoc(Server_loc &loc) {
     if (totCap == loc.success_bw) {
-      if (loc.total_price < best_loc.total_price) {
-        best_loc = loc;
-        value_supper=loc.total_price;
+      if(best_loc.empty()){
+        best_loc.push_back(loc);
+        value_supper=best_loc.front().total_price;
+      }else if(loc.total_price<best_loc.back().total_price){
+        best_loc.push_back(loc);
+        deleteRepeat(best_loc, para.success_left_num);
+        value_supper=best_loc.front().total_price;
       }
+
     }
     server_candiate.push_back(loc);
     // for( set<int>::iterator it=loc.locs.begin(  ); it!= loc.locs.end(  ); it++ ){
@@ -240,7 +271,7 @@ class Loc_choose {
   char *output();
 
   double start_time;
-  Server_loc best_loc;
+  vector<Server_loc> best_loc;
 
  public:
   Loc_choose(undirected_graph &g, int network_n_num, int user_n_num,
@@ -259,9 +290,6 @@ class Loc_choose {
         orignal_caps(caps) {
     start_time = systemTime();
 
-    best_loc.total_price = INF;
-    best_loc.success_bw = -100;
-    
     totCap = 0;
 
     for (vector<int>::const_iterator it = user_demand.begin();
