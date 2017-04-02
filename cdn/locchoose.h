@@ -214,7 +214,7 @@ class Loc_choose {
 
   }
 
-  bool time_end() const { return systemTime() - start_time > time_bound - 5; }
+  bool time_end() const { return systemTime() - start_time > time_bound -3; }
 
   int raoDong() const { return rand() % 3 - 1; }
 

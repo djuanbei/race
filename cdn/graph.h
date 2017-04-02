@@ -55,7 +55,7 @@ class undirected_graph {
   vector<int> inPeerLinkMap;   // link_end peer link
 
   vector<bool> found;
-  VI dist, width, flow, caps;
+  VI dist, width, flow, caps, backDis;
   Fixed_heap Q;
   VPII dad;
 

@@ -55,6 +55,7 @@ void undirected_graph::initial(const vector<int> &esrcs,
   vertex_num = ver_max + 1;
 
   dist.resize(vertex_num, INF);
+  backDis.resize(vertex_num, INF);
 
   width.resize(vertex_num, 0);
   dad.resize(vertex_num);
@@ -206,16 +207,16 @@ void undirected_graph::dijkstra_tree(const int src, vector<int> &dis) {
 
 
 void undirected_graph::dijkstra_reverse_tree(const int snk, const vector<int> &caps, vector<int> &dis){
-  
-  size_t j, inDegree, link, next;
+
+  size_t j, outDegree, link, next;
   int current, current_weight;
   int weight;
   dis.resize(vertex_num);
   fill(dis.begin(), dis.end(), INF);
-  vector<int> preLink(vertex_num, link_num + 1);
-  vector<int> parent(vertex_num, -1);
+	
   dis[snk] = 0;
-  Fixed_heap Q(vertex_num);
+  Q.clear();
+
 
   Q.push(0, snk);
 
@@ -223,25 +224,28 @@ void undirected_graph::dijkstra_reverse_tree(const int snk, const vector<int> &c
     Q.top( current_weight, current);
 
     Q.pop();
+    outDegree = getOutDegree(current);
 
-    inDegree =getInDegree(current);
-  
-    for (j = 0; j < inDegree; j++) {
 
-      link = inIndex[current] + j;
-      if(caps[link]>0){
-        
-        const startElement &neighbour = link_starts[link];
-        // link = neighbour.link;
-        weight = current_weight + link_ends[link].weight;
-        next = neighbour.src;
+    for (int j = 0; j < outDegree; j++) {
+      link = outIndex[current] + j;
+			
+
+      link = inPeerLinkMap[link];
+
+      if (caps[link] > 0) {
+        const endElement &neighbour = link_ends[link];
+
+        next = _srcs[link];
+        weight = current_weight+ neighbour.weight;
+
         if (weight < dis[next]) {
-          parent[next] = current;
-          preLink[next] = link;
-          dis[next] = weight;
+          dis[next]=weight;
           Q.push(weight, next);
         }
       }
+
+
     }
   }
 
@@ -345,7 +349,7 @@ int undirected_graph::dijkstra(const int src, const int snk,
   width[src] = INF;
 
   Q.clear();
-  Q.push(0, src);
+  Q.push(backDis[src], src);
 
   while (!Q.empty()) {
     Q.top( current_weight, current);
@@ -358,7 +362,6 @@ int undirected_graph::dijkstra(const int src, const int snk,
     outDegree = getOutDegree(current);
 
 
-
     for (int j = 0; j < outDegree; j++) {
       link = outIndex[current] + j;
       int cap = (caps[link] - flow[link]);
@@ -369,10 +372,12 @@ int undirected_graph::dijkstra(const int src, const int snk,
 
         weight = dist[current] + neighbour.weight;
         if (weight < dist[snk] && weight < dist[next]) {
+          
           dist[next] = weight;
+          
           dad[next] = make_pair(current, 2 * link + 1);
           width[next] = min(cap, width[current]);
-          Q.push(weight, next);
+          Q.push(weight+backDis[next], next);
         }
       }
 
@@ -389,7 +394,7 @@ int undirected_graph::dijkstra(const int src, const int snk,
           dist[next] = weight;
           dad[next] = make_pair(current, 2 * link);
           width[next] = min(cap, width[current]);
-          Q.push(weight, next);
+          Q.push(weight+backDis[next], next);
         }
       }
     }
@@ -416,9 +421,8 @@ int undirected_graph::dijkstra(const int src, const int snk,
   dis[src] = 0;
   Q.clear(  );
   
-  // Fixed_heap Q(vertex_num);
 
-  Q.push(0, src);
+  Q.push(backDis[src], src);
 
   while (!Q.empty()) {
     Q.top( current_weight, current);
@@ -452,7 +456,7 @@ int undirected_graph::dijkstra(const int src, const int snk,
           parent[next] = current;
           preLink[next] = link;
           dis[next] = weight;
-          Q.push(weight, next);
+          Q.push(weight+backDis[next], next);
         }
       }
     }
@@ -475,14 +479,17 @@ pair<int, int> undirected_graph::getMinCostMaxFlow(
 
   node_sum_value.resize(vertex_num, 0);
   fill(node_sum_value.begin(), node_sum_value.end(), 0);
+  fill(backDis.begin(), backDis.end(), INF); 
   
-  // vector<int> caps(link_num);
+
   for (size_t i = 0; i < ecaps.size(); i++) {
     int link = out2inLink_map[2 * i];
     caps[link] = ecaps[i];
     link = out2inLink_map[2 * i + 1];
     caps[link] = ecaps[i];
   }
+  
+  dijkstra_reverse_tree(snk, caps, backDis );
 
   int totflow = 0, totcost = 0;
   int amt = dijkstra(src, snk, caps);
@@ -547,7 +554,8 @@ void undirected_graph::getMinCostMaxFlow(int src, const int snk,
   fill(dist.end(), dist.end(), INF);
   fill(width.begin(), width.end(), 0);
   fill(flow.begin(), flow.end(), 0);
-
+  fill(backDis.begin(), backDis.end(), INF);
+  
   dist[src] = 0;
   width[src] = INF;
   vector<int> caps(link_num);
@@ -557,6 +565,8 @@ void undirected_graph::getMinCostMaxFlow(int src, const int snk,
     link = out2inLink_map[2 * i + 1];
     caps[link] = ecaps[i];
   }
+  dijkstra_reverse_tree(snk, caps, backDis );
+    
   int amt = dijkstra(src, snk, caps);
   while (amt > 0) {
     for (int x = snk; x != src; x = dad[x].first) {

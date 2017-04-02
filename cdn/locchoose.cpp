@@ -940,8 +940,8 @@ char *Loc_choose::solve() {
   while (true) {
     para.iterator_num++;
     
-    std::cout << "time(s): " << systemTime() - start_time
-              << " value: " << value_supper<<" server_value: "<<best_loc.front().locs.size()*server_price << std::endl;
+    // std::cout << "time(s): " << systemTime() - start_time
+    //           << " value: " << value_supper<<" server_value: "<<best_loc.front().locs.size()*server_price << std::endl;
 
     if (time_end()) {
       break;
