@@ -95,7 +95,7 @@ class Loc_choose {
     int iterator_num;
     Para() {
       randTryNum = 100;
-      delete_para = 0.5;
+      delete_para = 0.9;
       first_class_candiate_num = 1;
       deleteSmall = false;
       stable_bound = 10000;

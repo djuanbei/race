@@ -469,27 +469,19 @@ void Loc_choose::randdom_generate(void) {
   }
 
   for (size_t i = 0; i < firstLen; i++) {
-    // int best_loc = i;
-    // float best_value =
-    //     simliar1(server_candiate[i], server_candiate[i]);
+ 
     for (size_t j = i; j < firstLen; j++) {
       generate_case(server_candiate[i], server_candiate[j]);
-      // float temp_value =
-      //     simliar1(server_candiate[i], server_candiate[j]);
-      // if (temp_value < best_value) {
-      //   best_loc = j;
-      //   best_value = temp_value;
-      // }
+ 
     }
-
 
     if(server_candiate[ i ].locs.size(  )<network_node_num&& para.randAddNum>0 ){
       Server_loc tempS=server_candiate[ i ];
       for( int k=0; k<para.randAddNum; k++  ){
 
-        int network_node =random(  )% network_node_num;
+        int network_node =rand(  )% network_node_num;
         while(server_candiate[ i ].locs.find(network_node  )!= server_candiate[ i ].locs.end(  ) )      {
-          network_node =random(  )% network_node_num;
+          network_node =rand(  )% network_node_num;
         }
         tempS.locs.insert( network_node );
       }
@@ -501,20 +493,22 @@ void Loc_choose::randdom_generate(void) {
 
   }
 
+  sort(server_candiate.begin(), server_candiate.end());
+  
   if (server_candiate.size() > 0) {
-    int secondLen = server_candiate.size();
+    int secondLen = server_candiate.size()/2;
 
     secondLen--;
+    
+    int minL=firstLen;
+    firstLen=0;
+    for (size_t i = 0; i < minL; i++) {
 
-    for (size_t i = 0; i < firstLen; i++) {
       int rid = firstLen + (rand() % (int)(secondLen - firstLen + 1));
-      generate_case(server_candiate[i], server_candiate[rid]);
+      generate_case(best_loc, server_candiate[rid]);
 
       rid = firstLen + (rand() % (int)(secondLen - firstLen + 1));
-      generate_case(server_candiate[i], server_candiate[rid]);
-
-      rid = firstLen + (rand() % (int)(secondLen - firstLen + 1));
-      generate_case(server_candiate[i], server_candiate[rid]);
+      generate_case(best_loc, server_candiate[rid]);
 
     }
   }
@@ -583,16 +577,16 @@ void Loc_choose::update(Server_loc &server, bool recursive) {
         candiateN.push_back(make_pair(it->second, it->first));
       }
     }
-    int add_num=3;
+    int add_num=1;
     if(  para.iterator_num>2 ){
       add_num=1;
     }
     if (!candiateN.empty()) {
       sort(candiateN.rbegin(), candiateN.rend());
-      // server.locs.insert(candiateN[0].second);
-      for (size_t i = 0; i<add_num&& i < candiateN.size(); i++) {
-        server.locs.insert(candiateN[i].second);
-      }
+      server.locs.insert(candiateN[0].second);
+      // for (size_t i = 0; i<add_num&& i < candiateN.size(); i++) {
+      //   server.locs.insert(candiateN[i].second);
+      // }
 
       if (bestLayoutFlow(server)) {
         return;
@@ -607,6 +601,10 @@ void Loc_choose::update(Server_loc &server, bool recursive) {
     bool state = true;
 
     while (state) {
+      if(time_end()){
+        return;
+      }
+      
       state = false;
       vector<pair<int, int>> candiateN;
       for (map<int, int>::iterator it = server.outBandwidth.begin();
@@ -825,11 +823,21 @@ bool Loc_choose::domain_intersection_check() {
 
   int minServerNum = tempS.locs.size();
 
+  bestLayoutFlow(tempS);
+
+  update(tempS, true);
+  addLoc(tempS);
+
+
   for (vector<int>::iterator it = allChoose.begin(); it != allChoose.end();
        it++) {
     int network_node = *it;
 
     if (choosedServer.find(network_node) != choosedServer.end()) {
+      continue;
+    }
+    
+    if(network_node_user_map[*it]>-1){
       continue;
     }
 
@@ -843,10 +851,6 @@ bool Loc_choose::domain_intersection_check() {
     addLoc(temp);
   }
 
-  bestLayoutFlow(tempS);
-
-  update(tempS, true);
-  addLoc(tempS);
 
   if (value_lower > minServerNum * server_price) {
     value_lower = minServerNum * server_price;
@@ -948,7 +952,7 @@ char *Loc_choose::solve() {
         para.first_class_candiate_num = 1;
       }
     } else {
-      para.randAddNum==0;
+      para.randAddNum=0;
       para.add_num++;
       if (para.add_num > 5) {
         para.add_num = 5;
@@ -977,7 +981,7 @@ char *Loc_choose::solve() {
     delete_candiate();
 
     randdom_generate();
-
+    
 
     if ((value_supper / server_price) == (value_lower / server_price)) {
       return output();

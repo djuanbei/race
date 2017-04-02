@@ -152,6 +152,8 @@ class undirected_graph {
   }
 
   void dijkstra_tree(const int src, vector<int> &dis);
+    
+  void dijkstra_reverse_tree(const int snk, const vector<int> &caps, vector<int> &dis);
 
   /**
    *

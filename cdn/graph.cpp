@@ -204,6 +204,49 @@ void undirected_graph::dijkstra_tree(const int src, vector<int> &dis) {
   }
 }
 
+
+void undirected_graph::dijkstra_reverse_tree(const int snk, const vector<int> &caps, vector<int> &dis){
+  
+  size_t j, inDegree, link, next;
+  int current, current_weight;
+  int weight;
+  dis.resize(vertex_num);
+  fill(dis.begin(), dis.end(), INF);
+  vector<int> preLink(vertex_num, link_num + 1);
+  vector<int> parent(vertex_num, -1);
+  dis[snk] = 0;
+  Fixed_heap Q(vertex_num);
+
+  Q.push(0, snk);
+
+  while (!Q.empty()) {
+    Q.top( current_weight, current);
+
+    Q.pop();
+
+    inDegree =getInDegree(current);
+  
+    for (j = 0; j < inDegree; j++) {
+
+      link = inIndex[current] + j;
+      if(caps[link]>0){
+        
+        const startElement &neighbour = link_starts[link];
+        // link = neighbour.link;
+        weight = current_weight + link_ends[link].weight;
+        next = neighbour.src;
+        if (weight < dis[next]) {
+          parent[next] = current;
+          preLink[next] = link;
+          dis[next] = weight;
+          Q.push(weight, next);
+        }
+      }
+    }
+  }
+
+}
+  
 void undirected_graph::dijkstra_limit_tree(const int src, const int limit,
                                            vector<pair<int, int>> &tree) {
   tree.clear();
