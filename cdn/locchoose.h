@@ -100,10 +100,10 @@ class Loc_choose {
       deleteSmall = false;
       stable_bound = 10000;
       success_left_num = 3;
-      part_left_num = 60;
+      part_left_num = 50;
       add_num = 7;
       large_scale = 150000;
-      initcase_num = 20;
+      initcase_num = 40;
       randAddNum=0;
       iterator_num=0;
     }
@@ -245,7 +245,7 @@ class Loc_choose {
    */
   bool smallestUer();
 
-  bool bestLayoutFlow(Server_loc &server);
+  bool bestLayoutFlow(Server_loc &server, bool more_check=false);
 
   bool domain_intersection_check();
 
