@@ -471,10 +471,32 @@ bool Loc_choose::more_check(Server_loc &server){
       }
     }
   }
+
   server.isCheck=true;
   return time_end();
 }
 
+void Loc_choose::delete_loc(Server_loc &server){
+
+  if( !time_end()&& totCap==server.success_bw&& totCap>0 ){
+    
+    vector<pair<int, int> > outBandwidth;
+    for(map<int, int>::iterator it=server.outBandwidth.begin(); it!=server.outBandwidth.end(); it++){
+      if(it->second>0){
+        outBandwidth.push_back(make_pair(it->second, it->first));
+      }
+    }
+    sort(outBandwidth.begin(), outBandwidth.end());
+    if(outBandwidth.size()>3){
+      int rid=rand()%3;
+      set<int> loc=server.locs;
+      loc.erase(outBandwidth[rid].second);
+      addRandLoc(loc);
+    }
+    
+  }
+  
+}
 
 void Loc_choose::delete_candiate(void) {
 
@@ -520,26 +542,17 @@ void Loc_choose::generate_case(Server_loc &lhs, Server_loc &rhs) {
   }
   set<int> locSet(tempLoc.begin(), tempLoc.begin() + outLen  );
   
-  bool add=true;
-  for( size_t i= 0; i<randCase.size(  ); i++ ){
-    if( locSet==randCase[ i ] ){
-      add=false;
-      break;
-    }
-  }
-  
-  if( add ){
-    randCase.push_back( locSet );
-  }
+  addRandLoc(locSet);
 }
 
 
 
 void Loc_choose::randdom_generate(void) {
+  
   randCase.clear(  );
   size_t firstLen = para.first_class_candiate_num;
   more_check(best_loc);
-  
+    
   sort(server_candiate.begin(), server_candiate.end());
 
   if (server_candiate.size() < firstLen) {
@@ -549,11 +562,11 @@ void Loc_choose::randdom_generate(void) {
   for (size_t i = 0; i < firstLen; i++) {
     if(para.randAddNum>0){
 
-      vector<pair<int, int> > checkC;
-      for(int network_node=0; network_node<network_node_num; network_node++){
-        checkC.push_back(make_pair(choose_time[network_node], network_node));
-      }
-      sort(checkC.begin(), checkC.end());
+      // vector<pair<int, int> > checkC;
+      // for(int network_node=0; network_node<network_node_num; network_node++){
+      //   checkC.push_back(make_pair(choose_time[network_node], network_node));
+      // }
+      // sort(checkC.begin(), checkC.end());
 
       
       Server_loc tempS=server_candiate[ i ];
@@ -579,6 +592,10 @@ void Loc_choose::randdom_generate(void) {
   }
 
   deleteRepeat(success_server_candiate, para.success_left_num);
+  
+  for(int i=0; i< para.success_left_num&& i< success_server_candiate.size(); i++){
+    delete_loc(success_server_candiate[i]);
+  }
   
   for(size_t i=0; i+1< success_server_candiate.size()&& i+1< para.success_left_num; i++){
 

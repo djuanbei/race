@@ -209,7 +209,22 @@ class Loc_choose {
     }
 
   }
+  void addRandLoc(set<int> &locSet){
+    bool add=true;
+    for( size_t i= 0; i<randCase.size(  ); i++ ){
+      if( locSet==randCase[ i ] ){
+        add=false;
+        break;
+      }
+    }
+  
+    if( add ){
+      randCase.push_back( locSet );
+    }
+  }
 
+  void delete_loc(Server_loc &server);
+  
   bool time_end() const { return systemTime() - start_time > time_bound -3; }
 
   int raoDong() const { return rand() % 3 - 1; }
