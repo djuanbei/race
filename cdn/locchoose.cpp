@@ -708,7 +708,9 @@ void Loc_choose::update(Server_loc &server, bool recursive) {
           return;
         }
       } else {
+
         sort(candiateN.rbegin(), candiateN.rend());
+
         server.locs.insert(candiateN[0].second);
 
         if (bestLayoutFlow(server)) {
@@ -917,9 +919,8 @@ bool Loc_choose::domain_intersection_check() {
 
   while (!Q.empty()) {
     int temp, network_node;
-    // pair<int, int> p =
+
     Q.top(temp, network_node);
-    // int network_node = p.second;
 
     Q.pop();
     vector<int> users = network_node_cover_domain[network_node];
