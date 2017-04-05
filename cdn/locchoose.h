@@ -6,7 +6,6 @@
 #include <map>
 #include <set>
 #include <utility>
-#include<cmath>
 #include <vector>
 #include "graph.h"
 
@@ -29,7 +28,8 @@ class Loc_choose {
 
     map<int, int> reach_node_value;
     bool isCheck;
-    Server_loc() : success_bw(0), total_price(0),isCheck(false)  {}
+
+    Server_loc() : success_bw(0), total_price(0),isCheck(false  ) {}
     bool operator<(const Server_loc &other) const {
       if (0 == success_bw) {
         return 0 == other.success_bw;
@@ -37,8 +37,8 @@ class Loc_choose {
       if (0 == other.success_bw) {
         return true;
       }
-      return (total_price /(success_bw+0.1)) <
-        (other.total_price /(other.success_bw +0.1));
+      return (total_price / (success_bw + 0.1)) <
+             (other.total_price / (other.success_bw + 0.1));
     }
   };
 
@@ -74,7 +74,7 @@ class Loc_choose {
     }
     fen1 = sqrt(fen1);
     fen2 = sqrt(fen2);
-    return (sum) / (fen1 * fen2 + 0.1); 
+    return (sum) / (fen1 * fen2 + 0.1);
   }
 
   struct Para {
@@ -94,19 +94,21 @@ class Loc_choose {
     int initcase_num;
     int randAddNum;
     int iterator_num;
+    int steable_time;
     Para() {
       randTryNum = 100;
       delete_para = 0.9;
       first_class_candiate_num = 1;
       deleteSmall = false;
       stable_bound = 10000;
-      success_left_num = 3;
-      part_left_num = 40;
+      success_left_num = 5;
+      part_left_num = 60;
       add_num = 7;
       large_scale = 150000;
-      initcase_num = 30;
-      randAddNum=0;
-      iterator_num=0;
+      initcase_num = 20;
+      randAddNum = 0;
+      iterator_num = 0;
+      steable_time=0;
     }
   };
 
@@ -143,8 +145,8 @@ class Loc_choose {
 
   int smallest_user;
   int large_user;
-  
-  vector<int> choose_time;
+
+  // vector<int> choose_time;
 
   /**
    * for every user u there at less a network node in server_candiate_locs[u]
@@ -161,71 +163,71 @@ class Loc_choose {
   set<int> choosedServer;
 
   vector<int> allChoose;
-  
+
   vector<set<int>> randCase;
 
   vector<vector<float>> network_to_user_inv_distance;
 
   vector<vector<int>> sum_of_pass_flow;
-  
+
   Para para;
 
-  void deleteRepeat(vector<Server_loc> &loc, const int num ){
-    
-    if(loc.size()<2){
+  void deleteRepeat(vector<Server_loc> &loc, const int num) {
+    if (loc.size() < 2) {
       return;
     }
-    
+
     sort(loc.begin(), loc.end());
-    set<int> last=loc.front().locs;
+    set<int> last = loc.front().locs;
     vector<Server_loc> temp;
     temp.push_back(loc.front());
-    
-    for(size_t i=1; i<loc.size(); i++ ){
-      if(last!=loc[i].locs){
-        last=loc[i].locs;
+
+    for (size_t i = 1; i < loc.size(); i++) {
+      if (last != loc[i].locs) {
+        last = loc[i].locs;
         temp.push_back(loc[i]);
-        if(temp.size()>=num){
+        if (temp.size() >= num) {
           break;
         }
       }
     }
-    
-    loc=temp;
+    loc = temp;
   }
-  
+
   void addLoc(Server_loc &loc) {
-    
     if (totCap == loc.success_bw) {
-      success_server_candiate.push_back(loc);
-      if(loc.total_price<best_loc.total_price){
-        value_supper=best_loc.total_price;
-        best_loc=loc;
+      if (best_loc.empty()) {
+        best_loc.push_back(loc);
+        value_supper = best_loc.front().total_price;
+      } else if (loc.total_price < best_loc.back().total_price) {
+        best_loc.push_back(loc);
+        if(value_supper> loc.total_price ){
+          value_supper=loc.total_price;
+        }
       }
     }
     server_candiate.push_back(loc);
-    for( set<int>::iterator it=loc.locs.begin(  ); it!= loc.locs.end(  ); it++ ){
-      choose_time[ *it ]++;
-    }
-
+    // for( set<int>::iterator it=loc.locs.begin(  ); it!= loc.locs.end(  );
+    // it++ ){
+    //   choose_time[ *it ]++;
+    // }
   }
-  void addRandLoc(set<int> &locSet){
-    bool add=true;
-    for( size_t i= 0; i<randCase.size(  ); i++ ){
-      if( locSet==randCase[ i ] ){
-        add=false;
+
+  void addRandLoc(set<int> &locSet) {
+    bool add = true;
+    for (size_t i = 0; i < randCase.size(); i++) {
+      if (locSet == randCase[i]) {
+        add = false;
         break;
       }
     }
-  
-    if( add ){
-      randCase.push_back( locSet );
+
+    if (add) {
+      randCase.push_back(locSet);
     }
   }
-
-  void delete_loc(Server_loc &server);
   
-  bool time_end() const { return systemTime() - start_time > time_bound -3; }
+  bool time_end() const { return systemTime() - start_time > time_bound - 2.6; }
 
   int raoDong() const { return rand() % 3 - 1; }
 
@@ -258,8 +260,8 @@ class Loc_choose {
 
   bool bestLayoutFlow(Server_loc &server);
 
-  bool more_check(Server_loc &server);
-
+  bool more_check(Server_loc &server) ;
+  
   bool domain_intersection_check();
 
   /**
@@ -284,8 +286,7 @@ class Loc_choose {
   char *output();
 
   double start_time;
-  Server_loc best_loc;
-
+  vector<Server_loc> best_loc;
 
  public:
   Loc_choose(undirected_graph &g, int network_n_num, int user_n_num,
@@ -302,18 +303,18 @@ class Loc_choose {
         network_node_user_map(node_map),
         user_demand(dcaps),
         orignal_caps(caps) {
+
     start_time = systemTime();
-    best_loc.success_bw=-100;
-    best_loc.total_price=INF;
+
     totCap = 0;
 
     for (vector<int>::const_iterator it = user_demand.begin();
          it != user_demand.end(); it++) {
       totCap += *it;
     }
-    
-    choose_time.resize(network_node_num, 0  );
-    
+
+    // choose_time.resize(network_node_num, 0  );
+
     server_candiate_locs.resize(user_node_num);
     user_to_network_map.resize(user_node_num);
 
@@ -325,7 +326,7 @@ class Loc_choose {
     sum_of_pass_flow.resize(network_node_num);
     for (int i = 0; i < network_node_num; i++) {
       network_to_user_inv_distance[i].resize(user_node_num, 0.0f);
-      sum_of_pass_flow[ i ].resize( network_node_num, 0 );
+      sum_of_pass_flow[i].resize(network_node_num, 0);
     }
 
     if (network_node_num < 300) {

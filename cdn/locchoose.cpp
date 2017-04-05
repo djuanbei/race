@@ -4,7 +4,7 @@
 #include <string.h>
 
 #include <algorithm>
-#include<cmath>
+
 #include <assert.h>
 #include <sys/resource.h>
 #include <sys/time.h>
@@ -98,7 +98,7 @@ void Loc_choose::initial() {
     for (int user_node = 0; user_node < user_node_num; user_node++) {
       int temp = user_to_network_map[user_node];
       network_to_user_inv_distance[network_node][user_node] =
-        1.0 / (dis[temp] + 1);
+          1.0 / (dis[temp] + 1);
     }
   }
   releaseVirLinks();
@@ -201,9 +201,8 @@ void Loc_choose::lower_update() {
       cap += server_candiate[i].success_bw;
       temp_value += server_candiate[i].total_price;
     } else {
-      temp_value +=
-          server_candiate[i].total_price *
-          ((totCap - cap) / (server_candiate[i].success_bw + 0.01));
+      temp_value += server_candiate[i].total_price *
+                    ((totCap - cap) / (server_candiate[i].success_bw + 0.01));
       if (value_lower > temp_value) {
         value_lower = temp_value;
       }
@@ -211,7 +210,6 @@ void Loc_choose::lower_update() {
     }
   }
 }
-
 
 void Loc_choose::forbidVirLinks() {
   for (int network_node = 0; network_node < network_node_num; network_node++) {
@@ -255,14 +253,13 @@ bool Loc_choose::smallestUer() {
   return false;
 }
 
-
- bool Loc_choose::bestLayoutFlow(Server_loc &server) {
+bool Loc_choose::bestLayoutFlow(Server_loc &server) {
   server.locs.insert(choosedServer.begin(), choosedServer.end());
 
-  for( size_t i=0; i< server_candiate.size(  ); i++ ){
-    if( server.locs==server_candiate[ i ].locs){
-      server=server_candiate[ i ];
-      return time_end(  );
+  for (size_t i = 0; i < server_candiate.size(); i++) {
+    if (server.locs == server_candiate[i].locs) {
+      server = server_candiate[i];
+      return time_end();
     }
   }
 
@@ -271,8 +268,8 @@ bool Loc_choose::smallestUer() {
   for (set<int>::iterator nid = server.locs.begin(); nid != server.locs.end();
        nid++) {
     caps[*nid] = totCap;
-    fill( sum_of_pass_flow[ *nid ].begin(  ) ,sum_of_pass_flow[ *nid].end(  ), 0);
-    
+    fill(sum_of_pass_flow[*nid].begin(), sum_of_pass_flow[*nid].end(), 0);
+
     if (network_node_user_map[*nid] > -1) {
       int user_node = network_node_user_map[*nid];
       int inlink = target_link_start / 2 + user_node;
@@ -287,8 +284,9 @@ bool Loc_choose::smallestUer() {
   vector<int> node_sum_value;
   server.user_in_bandwidth.resize(user_node_num, 0);
 
-  pair<int, int> one_elem = graph.getMinCostMaxFlow(
-      virtual_source, virtual_target, caps, leftCap, outs, ins, node_sum_value, sum_of_pass_flow );
+  pair<int, int> one_elem =
+      graph.getMinCostMaxFlow(virtual_source, virtual_target, caps, leftCap,
+                              outs, ins, node_sum_value, sum_of_pass_flow);
 
   server.success_bw = one_elem.first;
 
@@ -327,15 +325,44 @@ bool Loc_choose::smallestUer() {
   }
 
   server.total_price = one_elem.second + server.locs.size() * server_price;
+  if (!time_end() && totCap == server.success_bw) {
+    Server_loc tempS = server;
 
-  
+    set<int> locs = server.locs;
+    for (set<int>::iterator it = locs.begin(); it != locs.end(); it++) {
+      int sum = server.outBandwidth[*it];
+      int node = -1;
+      int big = -1;
+
+      for (int network_node = 0; network_node < network_node_num;
+           network_node++) {
+        if (2 * sum_of_pass_flow[*it][network_node] >= sum) {
+          if (sum_of_pass_flow[*it][network_node] > big) {
+            big = sum_of_pass_flow[*it][network_node];
+            node = network_node;
+          }
+        }
+      }
+
+      if (node > -1) {
+        server.locs.erase(*it);
+        server.locs.insert(node);
+        addLoc(tempS);
+
+        return bestLayoutFlow(server);
+      }
+    }
+  }
+
   return time_end();
 }
 
-bool Loc_choose::more_check(Server_loc &server){
-  if(server.isCheck){
+
+bool Loc_choose::more_check(Server_loc &server) {
+  if (server.isCheck) {
     return time_end();
   }
+  
   server.locs.insert(choosedServer.begin(), choosedServer.end());
 
   vector<int> caps = orignal_caps;
@@ -343,8 +370,8 @@ bool Loc_choose::more_check(Server_loc &server){
   for (set<int>::iterator nid = server.locs.begin(); nid != server.locs.end();
        nid++) {
     caps[*nid] = totCap;
-    fill( sum_of_pass_flow[ *nid ].begin(  ) ,sum_of_pass_flow[ *nid].end(  ), 0);
-    
+    fill(sum_of_pass_flow[*nid].begin(), sum_of_pass_flow[*nid].end(), 0);
+
     if (network_node_user_map[*nid] > -1) {
       int user_node = network_node_user_map[*nid];
       int inlink = target_link_start / 2 + user_node;
@@ -359,8 +386,9 @@ bool Loc_choose::more_check(Server_loc &server){
   vector<int> node_sum_value;
   server.user_in_bandwidth.resize(user_node_num, 0);
 
-  pair<int, int> one_elem = graph.getMinCostMaxFlow(
-      virtual_source, virtual_target, caps, leftCap, outs, ins, node_sum_value, sum_of_pass_flow );
+  pair<int, int> one_elem =
+      graph.getMinCostMaxFlow(virtual_source, virtual_target, caps, leftCap,
+                              outs, ins, node_sum_value, sum_of_pass_flow);
 
   server.success_bw = one_elem.first;
 
@@ -399,33 +427,34 @@ bool Loc_choose::more_check(Server_loc &server){
   }
 
   server.total_price = one_elem.second + server.locs.size() * server_price;
-    
-  if( !time_end()&& totCap==server.success_bw ){
-    bool state=true;
-    while(state){
-      state=false;
-      set<int>& locs=server.locs;
-      for(set<int>::iterator it= locs.begin(  ); it!= locs.end(  ); it++ ){
-        Server_loc tempS=server;
-        int sum=server.outBandwidth[*it];
-        int node=-1;
-        int big=-1;
-      
-        for(int network_node =0; network_node< network_node_num; network_node++){
-          if(2*sum_of_pass_flow[ *it ][ network_node ]>=sum  ){
-            if(sum_of_pass_flow[ *it ][ network_node ]>big){
-              big=sum_of_pass_flow[ *it ][ network_node ];
-              node=network_node;
+
+  if (!time_end() && totCap == server.success_bw) {
+    bool state = true;
+    while (state) {
+      state = false;
+      set<int> &locs = server.locs;
+      for (set<int>::iterator it = locs.begin(); it != locs.end(); it++) {
+        Server_loc tempS = server;
+        int sum = server.outBandwidth[*it];
+        int node = -1;
+        int big = -1;
+
+        for (int network_node = 0; network_node < network_node_num;
+             network_node++) {
+          if (2 * sum_of_pass_flow[*it][network_node] >= sum) {
+            if (sum_of_pass_flow[*it][network_node] > big) {
+              big = sum_of_pass_flow[*it][network_node];
+              node = network_node;
             }
           }
         }
-      
-        if(node>-1){
-          state=true;
-          server.locs.erase( *it );
-          server.locs.insert( node );
 
-          if(bestLayoutFlow( server )){
+        if (node > -1) {
+          state = true;
+          server.locs.erase(*it);
+          server.locs.insert(node);
+
+          if (bestLayoutFlow(server)) {
             return true;
           }
           break;
@@ -434,37 +463,38 @@ bool Loc_choose::more_check(Server_loc &server){
     }
   }
 
-  if( !time_end()&& totCap==server.success_bw ){
-    
-    bool state=true;
-    while(state){
-      state=false;
+  if (!time_end() && totCap == server.success_bw) {
+    bool state = true;
+    while (state) {
+      state = false;
 
-      set<int>& locs=server.locs;
-      for(set<int>::iterator it= locs.begin(  ); it!= locs.end(  ); it++ ){
-        int sum=server.outBandwidth[*it];
-        int node=-1;
-        int big=-1;
-      
-        for(int network_node =0; network_node< network_node_num; network_node++){
-          if(sum_of_pass_flow[ *it ][ network_node ]>big){
-            big=sum_of_pass_flow[ *it ][ network_node ];
-            node=network_node;
+      set<int> &locs = server.locs;
+      for (set<int>::iterator it = locs.begin(); it != locs.end(); it++) {
+        int sum = server.outBandwidth[*it];
+        int node = -1;
+        int big = -1;
+
+        for (int network_node = 0; network_node < network_node_num;
+             network_node++) {
+          if (sum_of_pass_flow[*it][network_node] > big) {
+            big = sum_of_pass_flow[*it][network_node];
+            node = network_node;
           }
         }
-      
-        if(node>-1 &&3*big>sum ){
-          Server_loc temp=server;
-          temp.locs.erase( *it );
-          temp.locs.insert( node );
-          if(bestLayoutFlow( temp )){
+
+        if (node > -1 && 3 * big > sum) {
+          Server_loc temp = server;
+          temp.locs.erase(*it);
+          temp.locs.insert(node);
+          if (bestLayoutFlow(temp)) {
             return true;
           }
-          if(totCap==temp.success_bw&& temp.success_bw< server.success_bw){
-            server=temp;
-            state=true;
+          if (totCap == temp.success_bw &&
+              temp.success_bw < server.success_bw) {
+            server = temp;
+            state = true;
             break;
-          }else{
+          } else {
             addLoc(temp);
           }
         }
@@ -472,36 +502,12 @@ bool Loc_choose::more_check(Server_loc &server){
     }
   }
 
-  server.isCheck=true;
+  server.isCheck = true;
   return time_end();
 }
 
-void Loc_choose::delete_loc(Server_loc &server){
-
-  if( !time_end()&& totCap==server.success_bw&& totCap>0 ){
-    
-    vector<pair<int, int> > outBandwidth;
-    for(map<int, int>::iterator it=server.outBandwidth.begin(); it!=server.outBandwidth.end(); it++){
-      if(it->second>0){
-        outBandwidth.push_back(make_pair(it->second, it->first));
-      }
-    }
-    sort(outBandwidth.begin(), outBandwidth.end());
-    if(outBandwidth.size()>3){
-      int rid=rand()%3;
-      set<int> loc=server.locs;
-      loc.erase(outBandwidth[rid].second);
-      addRandLoc(loc);
-    }
-    
-  }
-  
-}
-
 void Loc_choose::delete_candiate(void) {
-
   deleteRepeat(server_candiate, para.part_left_num);
-  deleteRepeat(success_server_candiate, para.success_left_num);
 }
 
 void Loc_choose::generate_case(Server_loc &lhs, Server_loc &rhs) {
@@ -520,13 +526,18 @@ void Loc_choose::generate_case(Server_loc &lhs, Server_loc &rhs) {
 
   int minL = len1 < len2 ? len1 : len2;
   minL--;
-
+  if( network_node_num>500 ){
+    minL--;
+  }
   if (minL < 0) {
     minL = 0;
   }
 
   int maxL = len1 < len2 ? len2 : len1;
-  maxL ++;
+  // if( network_node_num>500 ){
+  //   maxL++;
+  // }
+  maxL++;
   if (maxL > tempLoc.size()) {
     maxL = tempLoc.size();
   }
@@ -540,19 +551,15 @@ void Loc_choose::generate_case(Server_loc &lhs, Server_loc &rhs) {
       return;
     }
   }
-  set<int> locSet(tempLoc.begin(), tempLoc.begin() + outLen  );
+  set<int> locSet(tempLoc.begin(), tempLoc.begin() + outLen);
+  addRandLoc( locSet );
   
-  addRandLoc(locSet);
+
 }
 
-
-
 void Loc_choose::randdom_generate(void) {
-  
-  randCase.clear(  );
+  randCase.clear();
   size_t firstLen = para.first_class_candiate_num;
-  more_check(best_loc);
-    
   sort(server_candiate.begin(), server_candiate.end());
 
   if (server_candiate.size() < firstLen) {
@@ -560,99 +567,92 @@ void Loc_choose::randdom_generate(void) {
   }
 
   for (size_t i = 0; i < firstLen; i++) {
-    if(para.randAddNum>0){
-
-      // vector<pair<int, int> > checkC;
-      // for(int network_node=0; network_node<network_node_num; network_node++){
-      //   checkC.push_back(make_pair(choose_time[network_node], network_node));
-      // }
-      // sort(checkC.begin(), checkC.end());
-
-      
-      Server_loc tempS=server_candiate[ i ];
-      for( int k=0; k<para.randAddNum ; k++  ){
-      
-
-        int network_node =rand(  )% network_node_num;
-        while(server_candiate[ i ].locs.find(network_node  )!= server_candiate[ i ].locs.end(  ) ) {
-          network_node =rand(  )% network_node_num;
+    if (para.randAddNum > 0) {
+      Server_loc tempS = server_candiate[i];
+      for (int k = 0; k < para.randAddNum; k++) {
+        int network_node = rand() % network_node_num;
+        while (server_candiate[i].locs.find(network_node) !=
+               server_candiate[i].locs.end()) {
+          network_node = rand() % network_node_num;
         }
-        tempS.locs.insert( network_node );
+        tempS.locs.insert(network_node);
       }
-      
-      bestLayoutFlow( tempS );
-      update( tempS, true );
-      addLoc( tempS );
+      addRandLoc( tempS.locs );
+
     }
-    
-    for (size_t j = i; j < firstLen; j++) {
+
+    for (size_t j = i+firstLen/3; j < firstLen; j++) {
       generate_case(server_candiate[i], server_candiate[j]);
     }
-  
-  }
-
-  deleteRepeat(success_server_candiate, para.success_left_num);
-  
-  for(int i=0; i< para.success_left_num&& i< success_server_candiate.size(); i++){
-    delete_loc(success_server_candiate[i]);
   }
   
-  for(size_t i=0; i+1< success_server_candiate.size()&& i+1< para.success_left_num; i++){
+  deleteRepeat(best_loc, para.success_left_num);
+  
+  if(!best_loc.empty(  )  ){
+    more_check( best_loc[ 0 ] );    
+  }
 
-    int best=-1;
-    double value=2;
-    for(size_t j=i+1; j< success_server_candiate.size()&& j+1<para.success_left_num; j++){
-      int temp=simliar1(success_server_candiate[i], success_server_candiate[j]);
-      if(temp<value){
-        value=temp;
-        best=i;
+  if(para.steable_time>2  ){
+    for( size_t i=1;i< best_loc.size(  ) ; i++ ){
+      more_check( best_loc[ i ] );
+    }
+  }
+  
+  for (size_t i = 0; i + 1 < best_loc.size(); i++) {
+    int best = -1;
+    double value = 2;
+    for (size_t j = i + 1; j < best_loc.size(); j++) {
+      int temp = simliar1(best_loc[i], best_loc[j]);
+      if (temp < value) {
+        value = temp;
+        best = i;
       }
     }
-    
-    if(best>-1){
-      generate_case(success_server_candiate[i], success_server_candiate[best]);
+
+    if (best > -1) {
+      generate_case(best_loc[i], best_loc[best]);
     }
   }
-  
+
   sort(server_candiate.begin(), server_candiate.end());
-  
-  if (server_candiate.size() > 0&& success_server_candiate.size()>0) {
-    int secondLen = server_candiate.size()/2;
+
+  if (server_candiate.size() > 0 && best_loc.size() > 0) {
+    int secondLen = server_candiate.size() / 2;
 
     secondLen--;
-    
-    int minL=firstLen;
-    firstLen=0;
-    for (size_t i = 0; i < minL; i++) {
 
+    int minL = firstLen;
+    firstLen = 0;
+    for (size_t i = 0; i < minL; i++) {
       int rid = firstLen + (rand() % (int)(secondLen - firstLen + 1));
-      generate_case(best_loc, server_candiate[rid]);
+      generate_case(best_loc[0], server_candiate[rid]);
 
       rid = firstLen + (rand() % (int)(secondLen - firstLen + 1));
-      generate_case(best_loc, server_candiate[rid]);
+      generate_case(best_loc[0], server_candiate[rid]);
+    }
+  }
 
-    }
-  }
-  
-  
-  for( size_t i=0; i< randCase.size(  ); i++ ){
+  for (size_t i = 0; i < randCase.size(); i++) {
     Server_loc tempS;
-    tempS.locs=randCase[ i ];
+    tempS.locs = randCase[i];
     bestLayoutFlow(tempS);
-    update(tempS, para.deleteSmall);
+    if (network_node_num * user_node_num < 100000) {
+      update(tempS, true);
+    } else {
+      update(tempS, para.deleteSmall);
+    }
     addLoc(tempS);
-    if(time_end()){
-       return;
+    if (time_end()) {
+      return;
     }
   }
+  deleteRepeat(best_loc, para.success_left_num);
 }
 
 void Loc_choose::update(Server_loc &server, bool recursive) {
-
   while (server.success_bw < totCap) {
-    
     // double left = totCap - server.success_bw;
-    
+
     int es_add_num = 1;
     if (user_node_num * network_node_num >= para.large_scale) {
       es_add_num = para.add_num;
@@ -690,7 +690,6 @@ void Loc_choose::update(Server_loc &server, bool recursive) {
     }
   }
 
-
   while (true) {
     vector<pair<int, int>> candiateN;
     for (map<int, int>::iterator it = server.reach_node_value.begin();
@@ -700,23 +699,23 @@ void Loc_choose::update(Server_loc &server, bool recursive) {
       }
     }
     if (!candiateN.empty()) {
-      // if(0==para.iterator_num){
-      //   for(size_t i=0; i<candiateN.size(); i++){
-      //     server.locs.insert(candiateN[i].second);
-      //   }
-      //   if (bestLayoutFlow(server)) {
-      //     return;
-      //   }
-      // }else{
+      if (0 == para.iterator_num) {
+        // sort(candiateN.rbegin(), candiateN.rend());
+        for (size_t i = 0; i < candiateN.size(); i++) {
+          server.locs.insert(candiateN[i].second);
+        }
+        if (bestLayoutFlow(server)) {
+          return;
+        }
+      } else {
+        sort(candiateN.rbegin(), candiateN.rend());
+        server.locs.insert(candiateN[0].second);
 
-      sort(candiateN.rbegin(), candiateN.rend());
-      server.locs.insert(candiateN[0].second);
-      
-      if (bestLayoutFlow(server)) {
-        return;
+        if (bestLayoutFlow(server)) {
+          return;
+        }
       }
-      // } 
-    }else {
+    } else {
       break;
     }
   }
@@ -725,10 +724,10 @@ void Loc_choose::update(Server_loc &server, bool recursive) {
     bool state = true;
 
     while (state) {
-      if(time_end()){
+      if (time_end()) {
         return;
       }
-      
+
       state = false;
       vector<pair<int, int>> candiateN;
       for (map<int, int>::iterator it = server.outBandwidth.begin();
@@ -781,19 +780,18 @@ void Loc_choose::update(Server_loc &server, bool recursive) {
  * @return dynamic allow memory for output file
  */
 char *Loc_choose::output() {
-  
-  if (best_loc.success_bw<0) {
+  if (best_loc.empty()) {
     char *topo_file = new char[1024];
     fill(topo_file, topo_file + 1023, 0);
     sprintf(topo_file, "NA");
     return topo_file;
   }
   vector<int> caps = orignal_caps;
-  for (set<int>::iterator it = best_loc.locs.begin(); it != best_loc.locs.end();
-       it++) {
+  for (set<int>::iterator it = best_loc.front().locs.begin();
+       it != best_loc.front().locs.end(); it++) {
     caps[*it] = totCap;
   }
-  
+
   vector<vector<int>> node_paths;
   vector<int> bws;
 
@@ -858,16 +856,8 @@ void Loc_choose::initial_candidate_loc() {
     if (1 == server_candiate_locs[user_node].size()) {
       user_direct_server[user_node] = true;
       choosedServer.insert(network_node);
-    }else{
-      server_candiate_locs[user_node].clear();
-      vector<pair<int, int>> tree;
-      graph.dijkstra_limit_tree(network_node, 0.8*limit, tree);
-
-      for (vector<pair<int, int>>::iterator it = tree.begin(); it != tree.end();
-           it++) {
-        server_candiate_locs[user_node].push_back(it->first);
-      }
     }
+
     sort(server_candiate_locs[user_node].begin(),
          server_candiate_locs[user_node].end());
   }
@@ -960,7 +950,6 @@ bool Loc_choose::domain_intersection_check() {
   update(tempS, true);
   addLoc(tempS);
 
-
   for (vector<int>::iterator it = allChoose.begin(); it != allChoose.end();
        it++) {
     int network_node = *it;
@@ -968,8 +957,8 @@ bool Loc_choose::domain_intersection_check() {
     if (choosedServer.find(network_node) != choosedServer.end()) {
       continue;
     }
-    
-    if(network_node_user_map[*it]>-1){
+
+    if (network_node_user_map[*it] > -1) {
       continue;
     }
 
@@ -982,7 +971,6 @@ bool Loc_choose::domain_intersection_check() {
     }
     addLoc(temp);
   }
-
 
   if (value_lower > minServerNum * server_price) {
     value_lower = minServerNum * server_price;
@@ -1049,13 +1037,13 @@ char *Loc_choose::solve() {
   }
   initial_case();
 
-  int steable_time = 0;
+
   int last_best_value = -1;
   while (true) {
     para.iterator_num++;
-    
+
     std::cout << "time(s): " << systemTime() - start_time
-              << " value: " << value_supper<<" server_value: "<<success_server_candiate.front().locs.size()*server_price << std::endl;
+              << " value: " << value_supper<<" server_value: "<<best_loc.front().locs.size()*server_price << std::endl;
 
     if (time_end()) {
       break;
@@ -1066,47 +1054,42 @@ char *Loc_choose::solve() {
 
     if (value_supper == last_best_value) {
       para.randAddNum++;
-
-      if( network_node_num<600 ){
-        if( para.randAddNum>2 ){
-          para.randAddNum=2;          
-        }
+      if (network_node_num < 300) {
+        para.randAddNum = 1;
       }
-      
-      if(para.randAddNum>value_supper/server_price){
-        para.randAddNum=value_supper/server_price;
+      if (network_node_num < 600) {
+        if (para.randAddNum > 2) {
+          para.randAddNum = 2;
+        }
       }
       para.add_num--;
       if (para.add_num < 1) {
         para.add_num = 1;
       }
-      steable_time++;
+      para.steable_time++;
       para.first_class_candiate_num--;
       if (para.first_class_candiate_num < 1) {
         para.first_class_candiate_num = 1;
       }
     } else {
-      para.randAddNum=0;
+      para.randAddNum = 0;
       para.add_num++;
       if (para.add_num > 5) {
         para.add_num = 5;
       }
       para.deleteSmall = false;
-      steable_time = 0;
+      para.steable_time = 0;
     }
 
-
-    if (steable_time > 5) {
-
-      para.first_class_candiate_num = 2 * steable_time / 5 + 1;
+    if (para.steable_time > 5) {
+      para.first_class_candiate_num = 3 * para.steable_time / 5 + 1;
     }
 
-    if (steable_time > 10) {
-
+    if (para.steable_time > 10) {
       para.deleteSmall = true;
     }
 
-    if (steable_time > para.stable_bound) {
+    if (para.steable_time > para.stable_bound) {
       break;
     }
 
@@ -1115,7 +1098,6 @@ char *Loc_choose::solve() {
     delete_candiate();
 
     randdom_generate();
-    
 
     if ((value_supper / server_price) == (value_lower / server_price)) {
       return output();
